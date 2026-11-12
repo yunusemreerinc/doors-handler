@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using DoorsHandler.Core;
 using DoorsHandler.Desktop.ViewModels;
 
 namespace DoorsHandler.Desktop;
@@ -29,6 +30,9 @@ public partial class MainWindow : Window
             : _viewModel.CopyPathCommand;
         if (command.CanExecute(null)) command.Execute(null);
     }
+
+    private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) =>
+        _viewModel.SelectedItems = ItemsGrid.SelectedItems.OfType<DoorsItem>().ToList();
 
     protected override void OnClosing(CancelEventArgs e)
     {

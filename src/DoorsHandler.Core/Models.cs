@@ -62,3 +62,29 @@ public class DoorsException : Exception
     /// <summary>Why the operation failed; drives the explanation shown to the user.</summary>
     public DoorsErrorKind Kind { get; }
 }
+
+/// <summary>A user-defined object attribute of a module.</summary>
+public sealed record DoorsAttributeDefinition(string Name, string Type);
+
+/// <summary>One object (requirement, heading, ...) of a formal module.</summary>
+public sealed record DoorsObject(
+    int AbsoluteNumber,
+    string Identifier,
+    int Level,
+    int? ParentAbsoluteNumber,
+    string Heading,
+    string Text,
+    string CreatedBy,
+    string CreatedOn,
+    string LastModifiedBy,
+    string LastModifiedOn,
+    IReadOnlyDictionary<string, string> Attributes);
+
+/// <summary>The objects of a formal module, in document order.</summary>
+public sealed record DoorsModuleContent(
+    string Name,
+    string FullName,
+    string Description,
+    IReadOnlyList<DoorsAttributeDefinition> AttributeDefinitions,
+    IReadOnlyList<DoorsObject> Objects,
+    IReadOnlyList<string> Warnings);

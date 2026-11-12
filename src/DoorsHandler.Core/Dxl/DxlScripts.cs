@@ -131,6 +131,117 @@ public static class DxlScripts
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Script reading every object of the formal module at <paramref name="moduleFullName"/>.
+    /// </summary>
+    /// <remarks>
+    /// Output lines (besides <c>OK</c>/<c>ERR</c>/<c>W</c>):
+    /// <list type="bullet">
+    ///   <item><c>M&lt;TAB&gt;name&lt;TAB&gt;fullName&lt;TAB&gt;description</c></item>
+    ///   <item><c>A&lt;TAB&gt;attributeName&lt;TAB&gt;typeName</c> for each user-defined object attribute, in order,</item>
+    ///   <item><c>O&lt;TAB&gt;absNo&lt;TAB&gt;identifier&lt;TAB&gt;level&lt;TAB&gt;parentAbsNo&lt;TAB&gt;heading&lt;TAB&gt;text&lt;TAB&gt;
+    ///   createdBy&lt;TAB&gt;createdOn&lt;TAB&gt;modifiedBy&lt;TAB&gt;modifiedOn</c> followed by one value per <c>A</c> line.</item>
+    /// </list>
+    /// The module is opened read-only and invisibly; it is closed afterwards only if it was not
+    /// already open, so a module the user is working on is left alone. Soft-deleted objects are
+    /// skipped; filters of the default view are ignored (<c>entire</c>).
+    /// </remarks>
+    public static string ReadModule(string moduleFullName)
+    {
+        var path = NormalizePath(moduleFullName);
+        var sb = new StringBuilder(Prelude);
+        sb.Append("string dhModPath = ").Append(ToDxlStringLiteral(path)).Append('\n');
+        sb.Append("""
+
+            Skip dhAttrNames = create
+            int dhAttrCount = 0
+            bool dhWasOpen = false
+            Module dhMod = null
+
+            void dhReadObjects() {
+                AttrDef ad
+                for ad in dhMod do {
+                    if (!ad.object || ad.system) continue
+                    string adName = ad.name
+                    put(dhAttrNames, dhAttrCount, adName)
+                    dhAttrCount++
+                    dhOut += "A"
+                    dhField(adName)
+                    dhField(ad.typeName)
+                    dhOut += "\n"
+                }
+
+                Object o
+                for o in entire dhMod do {
+                    if (isDeleted(o)) continue
+                    int absNo = o."Absolute Number"
+                    int parentNo = 0
+                    Object p = parent(o)
+                    if (!null p) {
+                        parentNo = p."Absolute Number"
+                    }
+                    dhOut += "O"
+                    dhField(absNo "")
+                    dhField(identifier(o))
+                    dhField(level(o) "")
+                    dhField(parentNo "")
+                    dhField(o."Object Heading" "")
+                    dhField(o."Object Text" "")
+                    dhField(o."Created By" "")
+                    dhField(o."Created On" "")
+                    dhField(o."Last Modified By" "")
+                    dhField(o."Last Modified On" "")
+                    int k
+                    for (k = 0; k < dhAttrCount; k++) {
+                        string an = ""
+                        find(dhAttrNames, k, an)
+                        dhField(o.an "")
+                    }
+                    dhOut += "\n"
+                }
+            }
+
+            // Errors are suppressed so that one unreadable attribute does not abort the
+            // export; they are reported as a warning instead.
+            noError()
+            ModName_ dhRef = module(dhModPath)
+            if (!null dhRef) {
+                dhWasOpen = open(dhRef)
+                dhMod = read(dhModPath, false)
+            }
+            if (!null dhMod) {
+                dhOut += "M"
+                dhField(name(dhMod))
+                dhField(fullName(dhMod))
+                dhField(description(dhMod))
+                dhOut += "\n"
+                dhReadObjects()
+            }
+            string dhWarn = lastError()
+
+            if (null dhMod) {
+                dhOut += "ERR\tMODULE_NOT_ACCESSIBLE"
+                dhField(dhModPath)
+                dhField(dhWarn)
+                dhOut += "\n"
+            } else {
+                if (!dhWasOpen) {
+                    close(dhMod, false)
+                }
+                dhOut += "OK\n"
+                if (!null dhWarn && dhWarn != "") {
+                    dhOut += "W\tDXL"
+                    dhField(dhWarn)
+                    dhOut += "\n"
+                }
+            }
+            delete dhAttrNames
+            dhFinish()
+
+            """);
+        return sb.ToString();
+    }
+
     /// <summary>Trims the path, ensures a leading slash and removes a trailing one (except for the root).</summary>
     public static string NormalizePath(string? path)
     {

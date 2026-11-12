@@ -105,7 +105,9 @@
             <TextBlock DockPanel.Dock="Left" Text="Göster:" Style="{StaticResource BarLabel}" />
             <ComboBox DockPanel.Dock="Left" Width="190"
                       ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
-            <Button DockPanel.Dock="Right" Content="CSV'ye aktar…" Command="{Binding ExportCommand}" />
+            <Button DockPanel.Dock="Right" Content="{Binding ExportJsonText}" Command="{Binding ExportJsonCommand}"
+                    ToolTip="Seçili formal modüllerin tüm nesnelerini (başlık, metin, öznitelikler) DOORS'tan okuyup tek bir JSON dosyasına yazar. Ctrl veya Shift ile birden fazla modül seçebilirsiniz." />
+            <Button DockPanel.Dock="Right" Content="Listeyi CSV'ye aktar…" Command="{Binding ExportCommand}" />
             <Grid Margin="0">
                 <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Text="Ad, yol, açıklama veya ID içinde ara…" IsHitTestVisible="False"
@@ -130,7 +132,8 @@
                       ItemsSource="{Binding ItemsView}"
                       SelectedItem="{Binding SelectedItem}"
                       AutoGenerateColumns="False" IsReadOnly="True"
-                      SelectionMode="Single" SelectionUnit="FullRow"
+                      SelectionMode="Extended" SelectionUnit="FullRow"
+                      SelectionChanged="OnSelectionChanged"
                       CanUserAddRows="False" CanUserDeleteRows="False"
                       HeadersVisibility="Column" GridLinesVisibility="Horizontal"
                       HorizontalGridLinesBrush="#E6E9EE" RowHeight="26"
@@ -140,6 +143,8 @@
                     <ContextMenu>
                         <MenuItem Header="Tam yolu kopyala" Command="{Binding CopyPathCommand}" />
                         <MenuItem Header="Bu klasörü/projeyi listele" Command="{Binding BrowseIntoCommand}" />
+                        <Separator />
+                        <MenuItem Header="{Binding ExportJsonText}" Command="{Binding ExportJsonCommand}" />
                     </ContextMenu>
                 </DataGrid.ContextMenu>
                 <DataGrid.Columns>

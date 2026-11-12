@@ -16,7 +16,7 @@ public static class DxlResultParser
             }
         }
 
-        throw new DoorsException("DOORS oturum bilgisi döndürmedi.");
+        throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS oturum bilgisi döndürmedi.");
     }
 
     public static DoorsListing ParseListing(string? raw)
@@ -53,7 +53,7 @@ public static class DxlResultParser
     {
         if (string.IsNullOrEmpty(raw))
         {
-            throw new DoorsException("DOORS boş yanıt döndürdü. DXL betiği çalıştırılamamış olabilir.");
+            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS boş yanıt döndürdü. DXL betiği çalıştırılamamış olabilir.");
         }
 
         var result = new List<string[]>();
@@ -70,7 +70,10 @@ public static class DxlResultParser
                     ok = true;
                     break;
                 case "ERR":
-                    throw new DoorsException(DescribeError(Field(fields, 1), Field(fields, 2)));
+                    var code = Field(fields, 1);
+                    throw new DoorsException(
+                        code == "ROOT_NOT_FOUND" ? DoorsErrorKind.RootNotFound : DoorsErrorKind.ScriptFailed,
+                        DescribeError(code, Field(fields, 2)));
                 default:
                     result.Add(fields);
                     break;
@@ -79,7 +82,7 @@ public static class DxlResultParser
 
         if (!ok)
         {
-            throw new DoorsException("DOORS yanıtı eksik; DXL betiği tamamlanmadan durdu.");
+            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS yanıtı eksik; DXL betiği tamamlanmadan durdu.");
         }
 
         return result;

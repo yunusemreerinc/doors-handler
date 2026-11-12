@@ -16,6 +16,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -52,8 +53,37 @@
             </DockPanel>
         </Border>
 
+        <!-- Error report: what failed, why, and what to do -->
+        <Border Grid.Row="1" Background="#FDF0F0" BorderBrush="#E8B4B4" BorderThickness="0,0,0,1" Padding="12,10"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"
+                AutomationProperties.LiveSetting="Assertive">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Content="Tekrar dene" Style="{StaticResource PrimaryButton}" Command="{Binding RetryCommand}" />
+                    <Button Content="Ayrıntıları kopyala" Command="{Binding CopyErrorCommand}"
+                            ToolTip="Hata bilgilerini destek ekibine göndermek için panoya kopyalar" />
+                    <Button Content="✕" Padding="8,2" ToolTip="Kapat" Command="{Binding DismissErrorCommand}" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Left" Text="⛔" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Top" />
+                <StackPanel>
+                    <TextBlock Text="{Binding Error.Title}" FontWeight="Bold" FontSize="14" Foreground="#9B1C1C" />
+                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                        <Run Text="Neden: " FontWeight="SemiBold" /><Run Text="{Binding Error.Reason, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                        <Run Text="Ne yapabilirsiniz: " FontWeight="SemiBold" /><Run Text="{Binding Error.Suggestion, Mode=OneWay}" />
+                    </TextBlock>
+                    <Expander Header="Teknik ayrıntılar" Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}">
+                        <TextBox Text="{Binding Error.Details, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                                 FontFamily="Consolas" FontSize="12" Margin="0,4,0,0" Padding="4"
+                                 MaxHeight="140" VerticalScrollBarVisibility="Auto" />
+                    </Expander>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
         <!-- Where to list -->
-        <DockPanel Grid.Row="1" Margin="8,8,8,4" LastChildFill="True">
+        <DockPanel Grid.Row="2" Margin="8,8,8,4" LastChildFill="True">
             <TextBlock DockPanel.Dock="Left" Text="Kök klasör:" Style="{StaticResource BarLabel}" />
             <Button DockPanel.Dock="Left" Content="↑" ToolTip="Üst klasöre çık" Padding="8,2"
                     Command="{Binding GoUpCommand}" />
@@ -71,7 +101,7 @@
         </DockPanel>
 
         <!-- Filter -->
-        <DockPanel Grid.Row="2" Margin="8,4,8,8" LastChildFill="True">
+        <DockPanel Grid.Row="3" Margin="8,4,8,8" LastChildFill="True">
             <TextBlock DockPanel.Dock="Left" Text="Göster:" Style="{StaticResource BarLabel}" />
             <ComboBox DockPanel.Dock="Left" Width="190"
                       ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
@@ -95,7 +125,7 @@
         </DockPanel>
 
         <!-- Items -->
-        <Grid Grid.Row="3" Margin="8,0,8,8">
+        <Grid Grid.Row="4" Margin="8,0,8,8">
             <DataGrid x:Name="ItemsGrid"
                       ItemsSource="{Binding ItemsView}"
                       SelectedItem="{Binding SelectedItem}"
@@ -153,7 +183,7 @@
         </Grid>
 
         <!-- Warnings -->
-        <Expander Grid.Row="4" Margin="8,0,8,8"
+        <Expander Grid.Row="5" Margin="8,0,8,8"
                   Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVisibility}}">
             <Expander.Header>
                 <TextBlock Foreground="#9A6700">
@@ -164,7 +194,7 @@
         </Expander>
 
         <!-- Status -->
-        <StatusBar Grid.Row="5" Background="{StaticResource BarBrush}" BorderBrush="{StaticResource BorderBrush}"
+        <StatusBar Grid.Row="6" Background="{StaticResource BarBrush}" BorderBrush="{StaticResource BorderBrush}"
                    BorderThickness="0,1,0,0">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>

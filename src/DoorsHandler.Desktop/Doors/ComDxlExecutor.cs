@@ -12,19 +12,12 @@ namespace DoorsHandler.Desktop.Doors;
 /// Late binding is used so no DOORS type library or interop assembly is needed at build time.
 /// If the DOORS client is not running, Windows starts it and DOORS shows its login dialog;
 /// the call returns once the user has logged in.
+/// Every failure is rethrown as a <see cref="DoorsException"/> whose <see cref="DoorsException.Kind"/>
+/// says why it failed, so the UI can explain it to the user.
 /// </remarks>
 internal sealed class ComDxlExecutor : IDxlExecutor
 {
     public const string ProgId = "DOORS.Application";
-
-    // HRESULTs meaning the DOORS process went away (closed or crashed) since we attached.
-    private static readonly int[] DisconnectedHResults =
-    [
-        unchecked((int)0x800706BA), // RPC_S_SERVER_UNAVAILABLE
-        unchecked((int)0x800706BE), // RPC_S_CALL_FAILED
-        unchecked((int)0x80010108), // RPC_E_DISCONNECTED
-        unchecked((int)0x80010114), // RPC_E_SERVER_DIED_DNE
-    ];
 
     private readonly StaWorker _worker = new("DOORS COM");
     private object? _doors;
@@ -46,14 +39,15 @@ internal sealed class ComDxlExecutor : IDxlExecutor
             object? result = doors.result;
             return result as string ?? string.Empty;
         }
-        catch (COMException ex) when (DisconnectedHResults.Contains(ex.HResult))
+        catch (Exception ex) when (ex is not DoorsException)
         {
-            Release();
-            throw new DoorsConnectionLostException("DOORS ile bağlantı koptu. DOORS istemcisi kapatılmış olabilir; yeniden bağlanın.", ex);
-        }
-        catch (COMException ex)
-        {
-            throw new DoorsException($"DOORS DXL betiğini çalıştıramadı: {ex.Message}", ex);
+            var kind = DoorsErrorClassifier.FromHResult(ex.HResult, duringStartup: false);
+            if (kind == DoorsErrorKind.ConnectionLost)
+            {
+                Release();
+            }
+
+            throw new DoorsException(kind, $"DOORS komutu çalıştırılamadı: {ex.Message}", ex);
         }
     }
 
@@ -61,16 +55,22 @@ internal sealed class ComDxlExecutor : IDxlExecutor
     {
         var type = Type.GetTypeFromProgID(ProgId, throwOnError: false)
             ?? throw new DoorsException(
-                $"'{ProgId}' COM sunucusu bulunamadı. Bu bilgisayarda IBM DOORS istemcisinin kurulu olduğundan emin olun.");
+                DoorsErrorKind.NotInstalled,
+                $"'{ProgId}' COM sunucusu bu bilgisayarda kayıtlı değil.");
 
         try
         {
             return Activator.CreateInstance(type)
-                ?? throw new DoorsException("DOORS COM nesnesi oluşturulamadı.");
+                ?? throw new DoorsException(DoorsErrorKind.StartFailed, "DOORS COM nesnesi oluşturulamadı.");
         }
-        catch (COMException ex)
+        catch (Exception ex) when (ex is not DoorsException)
         {
-            throw new DoorsException($"DOORS istemcisine bağlanılamadı: {ex.Message}", ex);
+            // Besides COMException, .NET maps some HRESULTs to other exception types
+            // (e.g. E_ACCESSDENIED -> UnauthorizedAccessException), so classify by HResult.
+            throw new DoorsException(
+                DoorsErrorClassifier.FromHResult(ex.HResult, duringStartup: true),
+                $"DOORS istemcisi başlatılamadı ya da bağlanılamadı: {ex.Message}",
+                ex);
         }
     }
 
@@ -78,17 +78,28 @@ internal sealed class ComDxlExecutor : IDxlExecutor
     {
         if (_doors is not null && Marshal.IsComObject(_doors))
         {
-            Marshal.FinalReleaseComObject(_doors);
+            try
+            {
+                Marshal.FinalReleaseComObject(_doors);
+            }
+            catch (Exception)
+            {
+                // The DOORS process may already be gone; nothing left to release.
+            }
         }
 
         _doors = null;
     }
 
+    /// <summary>
+    /// Does not block: if a DOORS call is still running (e.g. waiting for the login window),
+    /// the release is queued behind it and the worker thread ends once that call returns.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        _worker.InvokeAsync(() => { Release(); return true; }).Wait(TimeSpan.FromSeconds(5));
+        _ = _worker.InvokeAsync(() => { Release(); return true; });
         _worker.Dispose();
     }
 }

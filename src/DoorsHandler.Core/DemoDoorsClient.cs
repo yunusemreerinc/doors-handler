@@ -45,7 +45,7 @@ public sealed class DemoDoorsClient : IDoorsClient
         var root = DxlScripts.NormalizePath(rootPath);
         if (root != "/" && !Database.Any(i => i.FullName == root && !i.IsModule))
         {
-            throw new DoorsException($"DOORS'ta '{root}' klasörü/projesi bulunamadı ya da erişim izniniz yok.");
+            throw new DoorsException(DoorsErrorKind.RootNotFound, $"DOORS'ta '{root}' klasörü/projesi bulunamadı ya da erişim izniniz yok.");
         }
 
         var prefix = root == "/" ? "/" : root + "/";

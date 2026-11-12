@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Allows building (not running) the app on Linux/macOS, e.g. in CI. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>DoorsHandler</AssemblyName>
+    <RootNamespace>DoorsHandler.Desktop</RootNamespace>
+    <Product>DOORS Handler</Product>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DoorsHandler.Core\DoorsHandler.Core.csproj" />
+  </ItemGroup>
+
+</Project>

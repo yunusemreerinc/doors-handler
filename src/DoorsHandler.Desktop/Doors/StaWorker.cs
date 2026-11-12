@@ -21,7 +21,7 @@ internal sealed class StaWorker : IDisposable
     public Task<T> InvokeAsync<T>(Func<T> work, CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _queue.Add(() =>
+        Action action = () =>
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -37,7 +37,18 @@ internal sealed class StaWorker : IDisposable
             {
                 tcs.TrySetException(ex);
             }
-        });
+        };
+
+        try
+        {
+            _queue.Add(action, CancellationToken.None);
+        }
+        catch (InvalidOperationException)
+        {
+            // Dispose() already called CompleteAdding.
+            tcs.TrySetException(new ObjectDisposedException(nameof(StaWorker)));
+        }
+
         return tcs.Task;
     }
 
@@ -49,14 +60,16 @@ internal sealed class StaWorker : IDisposable
         }
     }
 
+    /// <summary>
+    /// Stops accepting work without waiting: queued work still runs, then the thread exits.
+    /// A call stuck inside DOORS therefore never freezes the caller. The queue itself is left
+    /// for the garbage collector because the thread may still be reading from it.
+    /// </summary>
     public void Dispose()
     {
-        _queue.CompleteAdding();
-        if (Thread.CurrentThread != _thread)
+        if (!_queue.IsAddingCompleted)
         {
-            _thread.Join(TimeSpan.FromSeconds(5));
+            _queue.CompleteAdding();
         }
-
-        _queue.Dispose();
     }
 }

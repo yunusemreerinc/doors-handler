@@ -37,7 +37,7 @@ public enum ItemFilter
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private IDoorsClient? _client;
-    private CancellationTokenSource? _listCts;
+    private CancellationTokenSource? _operationCts;
 
     private Option<ConnectionMode> _selectedMode;
     private Option<ItemFilter> _selectedFilter;
@@ -49,6 +49,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _statusText = "Bağlı değil. Başlamak için \"Bağlan\" düğmesine basın.";
     private string _lastListedRoot = string.Empty;
     private DoorsItem? _selectedItem;
+    private DoorsErrorReport? _error;
 
     public MainViewModel(bool demo = false)
     {
@@ -77,12 +78,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => !IsConnected && !IsBusy);
         DisconnectCommand = new RelayCommand(_ => Disconnect(), _ => IsConnected && !IsBusy);
         ListCommand = new AsyncRelayCommand(ListAsync, () => IsConnected && !IsBusy);
-        CancelCommand = new RelayCommand(_ => _listCts?.Cancel(), _ => IsBusy && _listCts is not null);
+        CancelCommand = new RelayCommand(_ => _operationCts?.Cancel(), _ => IsBusy && _operationCts is not null);
         ExportCommand = new RelayCommand(_ => Export(), _ => !IsBusy && VisibleCount > 0);
         CopyPathCommand = new RelayCommand(_ => CopyPath(), _ => SelectedItem is not null);
         BrowseIntoCommand = new AsyncRelayCommand(BrowseIntoAsync,
             () => IsConnected && !IsBusy && SelectedItem is { IsModule: false });
         GoUpCommand = new AsyncRelayCommand(GoUpAsync, () => IsConnected && !IsBusy && RootPath.Trim() is not ("" or "/"));
+        RetryCommand = new AsyncRelayCommand(RetryAsync, () => Error is not null && !IsBusy);
+        CopyErrorCommand = new RelayCommand(_ => CopyError(), _ => Error is not null);
+        DismissErrorCommand = new RelayCommand(_ => Error = null, _ => Error is not null);
     }
 
     public ObservableCollection<DoorsItem> Items { get; } = [];
@@ -100,6 +104,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand CopyPathCommand { get; }
     public ICommand BrowseIntoCommand { get; }
     public ICommand GoUpCommand { get; }
+    public ICommand RetryCommand { get; }
+    public ICommand CopyErrorCommand { get; }
+    public ICommand DismissErrorCommand { get; }
+
+    /// <summary>The last DOORS failure, shown in the error banner until dismissed or the next success.</summary>
+    public DoorsErrorReport? Error
+    {
+        get => _error;
+        private set
+        {
+            if (SetProperty(ref _error, value)) OnPropertyChanged(nameof(HasError));
+        }
+    }
+
+    public bool HasError => Error is not null;
 
     public Option<ConnectionMode> SelectedMode
     {
@@ -177,26 +196,39 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task ConnectAsync()
     {
         IsBusy = true;
+        Error = null;
+        _operationCts = new CancellationTokenSource();
         StatusText = SelectedMode.Value == ConnectionMode.Demo
             ? "Demo verisine bağlanılıyor…"
-            : "DOORS'a bağlanılıyor… (DOORS kapalıysa açılacak ve oturum açmanız istenecek)";
+            : "DOORS'a bağlanılıyor… DOORS kapalıysa açılacak ve oturum açmanız istenecek.";
         try
         {
             _client = CreateClient(SelectedMode.Value);
-            SetSession(await _client.ConnectAsync());
+            SetSession(await _client.ConnectAsync(_operationCts.Token));
             StatusText = $"Bağlandı: {SessionText}";
         }
         catch (Exception ex)
         {
+            // The client may still be blocked inside DOORS (e.g. waiting for login);
+            // disposing it abandons that call without freezing the window.
             _client?.Dispose();
             _client = null;
             SetSession(null);
-            StatusText = "Bağlantı başarısız.";
-            ShowError("Bağlantı hatası", ex);
+            if (ex is OperationCanceledException)
+            {
+                StatusText = "Bağlantı iptal edildi.";
+            }
+            else
+            {
+                ReportError("DOORS bağlantısı kurulamadı", ex);
+            }
+
             return;
         }
         finally
         {
+            _operationCts.Dispose();
+            _operationCts = null;
             IsBusy = false;
         }
 
@@ -226,7 +258,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (_client is null) return;
 
         IsBusy = true;
-        _listCts = new CancellationTokenSource();
+        Error = null;
+        _operationCts = new CancellationTokenSource();
         var root = DxlScripts.NormalizePath(RootPath);
         RootPath = root;
         StatusText = Recursive
@@ -234,7 +267,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : $"'{root}' listeleniyor…";
         try
         {
-            var listing = await _client.ListItemsAsync(root, Recursive, _listCts.Token);
+            var listing = await _client.ListItemsAsync(root, Recursive, _operationCts.Token);
             Items.Clear();
             foreach (var item in listing.Items) Items.Add(item);
             Warnings.Clear();
@@ -249,19 +282,49 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            StatusText = "Listeleme başarısız.";
-            if (ex is DoorsConnectionLostException)
+            var lost = ex is DoorsException { Kind: DoorsErrorKind.ConnectionLost };
+            if (lost)
             {
                 Disconnect();
             }
 
-            ShowError("Listeleme hatası", ex);
+            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller listelenemedi", ex, root);
         }
         finally
         {
-            _listCts.Dispose();
-            _listCts = null;
+            _operationCts.Dispose();
+            _operationCts = null;
             IsBusy = false;
+        }
+    }
+
+    /// <summary>Retries whatever failed: the listing if we are still connected, otherwise the connection.</summary>
+    private Task RetryAsync() => IsConnected ? ListAsync() : ConnectAsync();
+
+    private void ReportError(string title, Exception ex, string? rootPath = null)
+    {
+        var context = new List<KeyValuePair<string, string>>
+        {
+            new("Bağlantı türü", SelectedMode.Label),
+        };
+        if (rootPath is not null) context.Add(new("Kök klasör", rootPath));
+        context.AddRange(EnvironmentInfo.Describe());
+
+        Error = DoorsErrorReport.Create(title, ex, context);
+        StatusText = $"{title}: {Error.Reason}";
+    }
+
+    private void CopyError()
+    {
+        if (Error is null) return;
+        try
+        {
+            Clipboard.SetText(Error.ToClipboardText());
+            StatusText = "Hata ayrıntıları panoya kopyalandı.";
+        }
+        catch (Exception ex)
+        {
+            ShowError("Pano hatası", ex);
         }
     }
 
@@ -361,15 +424,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private static void ShowError(string title, Exception ex)
     {
-        var message = ex is DoorsException or InvalidOperationException
-            ? ex.Message
-            : $"Beklenmeyen hata: {ex.Message}";
+        var message = ex is InvalidOperationException ? ex.Message : $"Beklenmeyen hata: {ex.Message}";
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     public void Dispose()
     {
-        _listCts?.Cancel();
+        _operationCts?.Cancel();
         _client?.Dispose();
         _client = null;
     }

@@ -10,6 +10,8 @@ IBM DOORS (Classic, 9.x) istemcisine bağlanıp veritabanındaki **modülleri li
 - Klasör ya da projeye çift tıklayınca onun içine girer, modüle çift tıklayınca tam yolunu panoya kopyalar; `↑` ile üst klasöre çıkılır.
 - Görünen listeyi CSV olarak dışa aktarır (Excel'de Türkçe karakterler doğru görünsün diye UTF-8 BOM ve `;` ayraç kullanılır).
 - Erişim izni olmayan klasörler taramayı durdurmaz; uyarı olarak ayrıca gösterilir.
+- Bağlantı ya da listeleme başarısız olursa pencerenin üstünde bir hata bandı çıkar: **ne olduğu**, **nedeni** ve **ne yapılabileceği** Türkçe açıklanır; *Tekrar dene*, *Ayrıntıları kopyala* (destek ekibine göndermek için) ve teknik ayrıntılar (HRESULT, yetki, mimari) aynı yerdedir.
+- DOORS iki dakika içinde yanıt vermezse (ör. oturum açma penceresi arkada kaldıysa) bağlantı zaman aşımıyla sonlanır; bağlanırken *İptal* ile beklemeyi bırakabilirsiniz.
 - **Demo modu**: DOORS kurulu olmayan bir makinede arayüzü örnek verilerle denemek için.
 
 ## Gereksinimler
@@ -81,13 +83,20 @@ Yeni bir DOORS işlemi eklemek için `DxlScripts` içine betiği, `DxlResultPars
 
 ## Sorun giderme
 
-| Belirti | Olası neden |
-| --- | --- |
-| `'DOORS.Application' COM sunucusu bulunamadı` | DOORS istemcisi bu makinede kurulu değil ya da COM kaydı bozuk. DOORS kurulumunu onarmayı deneyin. |
-| Bağlan'a bastıktan sonra uzun süre bekliyor | DOORS açılıyor ve oturum açma penceresini bekliyor olabilir; pencere başka bir pencerenin arkasında kalmış olabilir. |
-| `Klasör bulunamadı` | Kök klasör yolu yanlış yazılmış ya da o klasörü görme izniniz yok. Yollar `/Proje/Klasör` biçimindedir. |
-| `DOORS ile bağlantı koptu` | DOORS istemcisi bağlantıdan sonra kapatıldı. Tekrar **Bağlan**'a basın. |
-| DOORS içinde DXL hata penceresi açılıyor | DOORS sürümünüz betikte kullanılan bir DXL fonksiyonunu desteklemiyor olabilir; hata metnini paylaşın. |
+Bir hata olduğunda uygulama nedenini kendisi sınıflandırıp hata bandında gösterir. Olası nedenler:
+
+| Hata bandındaki neden | Ne zaman olur | Ne yapmalı |
+| --- | --- | --- |
+| DOORS istemcisi bulunamadı | `DOORS.Application` COM sunucusu kayıtlı değil (`REGDB_E_CLASSNOTREG`) | DOORS'u kurun ya da kurulumu onarın. Denemek için *Demo verisi*ni seçin. |
+| DOORS başlatılamadı | Windows DOORS'u açamadı ya da çalışan DOORS'a bağlanamadı (`CO_E_SERVER_EXEC_FAILURE`) | DOORS'u kendiniz açıp oturum açın, sonra *Tekrar dene*. |
+| Erişim reddedildi | Biri yönetici olarak, diğeri normal çalışıyor (`E_ACCESSDENIED`) | DOORS'u ve bu uygulamayı aynı yetkiyle çalıştırın. |
+| DOORS meşgul | DOORS'ta açık bir iletişim kutusu ya da çalışan başka bir DXL var (`RPC_E_CALL_REJECTED`) | DOORS'taki açık pencereleri kapatın, sonra *Tekrar dene*. |
+| Zaman aşımı | DOORS 2 dakika içinde yanıt vermedi; çoğunlukla oturum açma penceresi arkada kalmıştır | DOORS penceresini bulup oturum açın, sonra *Tekrar dene*. |
+| Bağlantı koptu | DOORS bağlandıktan sonra kapatıldı ya da çöktü | DOORS'u yeniden açın, sonra *Tekrar dene*. |
+| DOORS komutu çalıştıramadı | DXL betiği hata verdi ya da boş yanıt döndü; DOORS'ta bir DXL hata penceresi açılmış olabilir | Hata metnini not edin, *Ayrıntıları kopyala* ile destek ekibine iletin. |
+| Klasör bulunamadı | Kök klasör yolu yanlış ya da görme izniniz yok | Yolu `/Proje/Klasör` biçiminde kontrol edin ya da `/` yazın. |
+
+*Teknik ayrıntılar* bölümünde zaman, hata türü, HRESULT, uygulamanın 32/64-bit olup olmadığı ve yönetici olarak çalışıp çalışmadığı yer alır.
 
 ## Kapsam dışı
 

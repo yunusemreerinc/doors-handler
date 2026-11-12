@@ -52,12 +52,13 @@ public sealed record DoorsListing(IReadOnlyList<DoorsItem> Items, IReadOnlyList<
 /// <summary>Raised when DOORS cannot be reached or a DXL script reports an error.</summary>
 public class DoorsException : Exception
 {
-    public DoorsException(string message) : base(message) { }
-    public DoorsException(string message, Exception inner) : base(message, inner) { }
-}
+    public DoorsException(DoorsErrorKind kind, string message, Exception? inner = null)
+        : base(message, inner)
+    {
+        Kind = kind;
+        if (inner is not null) HResult = inner.HResult;
+    }
 
-/// <summary>Raised when the DOORS client went away (closed or crashed) after we attached to it.</summary>
-public sealed class DoorsConnectionLostException : DoorsException
-{
-    public DoorsConnectionLostException(string message, Exception inner) : base(message, inner) { }
+    /// <summary>Why the operation failed; drives the explanation shown to the user.</summary>
+    public DoorsErrorKind Kind { get; }
 }

@@ -71,6 +71,31 @@ public sealed class DxlDoorsClient : IDoorsClient
         return DxlResultParser.ParseListing(raw);
     }
 
+    public async Task<DoorsModuleContent> ReadModuleAsync(string moduleFullName, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (!IsConnected)
+        {
+            throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+        }
+
+        string raw;
+        try
+        {
+            // No timeout: large modules legitimately take long to read. The user can cancel.
+            raw = await _executor.ExecuteAsync(DxlScripts.ReadModule(moduleFullName), cancellationToken)
+                .WaitAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (DoorsException ex) when (ex.Kind == DoorsErrorKind.ConnectionLost)
+        {
+            IsConnected = false;
+            throw;
+        }
+
+        return DxlResultParser.ParseModuleContent(raw);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

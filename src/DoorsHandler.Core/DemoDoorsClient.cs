@@ -56,6 +56,51 @@ public sealed class DemoDoorsClient : IDoorsClient
         return new DoorsListing(items, []);
     }
 
+    public async Task<DoorsModuleContent> ReadModuleAsync(string moduleFullName, CancellationToken cancellationToken = default)
+    {
+        if (!IsConnected) throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+        await Task.Delay(200, cancellationToken).ConfigureAwait(false);
+
+        var path = DxlScripts.NormalizePath(moduleFullName);
+        var module = Database.FirstOrDefault(i => i.FullName == path && i.Type == DoorsItemType.Formal)
+            ?? throw new DoorsException(DoorsErrorKind.ModuleNotAccessible,
+                $"'{path}' modülü açılamadı (bulunamadı ya da okuma izniniz yok).");
+
+        DoorsAttributeDefinition[] definitions =
+        [
+            new("Öncelik", "Priority"),
+            new("Durum", "Status"),
+            new("Doğrulama Yöntemi", "Verification"),
+        ];
+        var prefix = string.IsNullOrEmpty(module.Description) ? "REQ" : module.Description;
+        var objects = new List<DoorsObject>();
+        var number = 0;
+        for (var section = 1; section <= 3; section++)
+        {
+            var headingNo = ++number;
+            objects.Add(DemoObject(prefix, headingNo, 1, null, $"{section} Bölüm {section}", string.Empty, definitions, "", "", ""));
+            for (var req = 1; req <= 4; req++)
+            {
+                var n = ++number;
+                objects.Add(DemoObject(prefix, n, 2, headingNo, string.Empty,
+                    $"Sistem, {section}.{req} numaralı işlevi 100 ms içinde yerine getirmelidir.",
+                    definitions,
+                    req % 3 == 0 ? "Düşük" : "Yüksek",
+                    req % 2 == 0 ? "Onaylandı" : "Taslak",
+                    "Test"));
+            }
+        }
+
+        return new DoorsModuleContent(module.Name, module.FullName, module.Description, definitions, objects, []);
+    }
+
+    private static DoorsObject DemoObject(
+        string prefix, int number, int level, int? parent, string heading, string text,
+        DoorsAttributeDefinition[] definitions, params string[] values) =>
+        new(number, $"{prefix}-{number}", level, parent, heading, text,
+            "demo", "01.10.2026", "demo", "05.11.2026",
+            definitions.Select((d, i) => (d.Name, Value: values[i])).ToDictionary(x => x.Name, x => x.Value));
+
     public void Dispose() => IsConnected = false;
 
     private static DoorsItem Item(DoorsItemType type, string path, string description) =>

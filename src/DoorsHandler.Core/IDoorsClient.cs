@@ -13,6 +13,12 @@ public interface IDoorsClient : IDisposable
     /// ("/" is the database root).
     /// </summary>
     Task<DoorsListing> ListItemsAsync(string rootPath, bool recursive, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads all objects of the formal module at <paramref name="moduleFullName"/>.
+    /// The module is opened read-only and closed again unless the user already had it open.
+    /// </summary>
+    Task<DoorsModuleContent> ReadModuleAsync(string moduleFullName, CancellationToken cancellationToken = default);
 }
 
 /// <summary>Runs a DXL script inside DOORS and returns the string the script passed to <c>oleSetResult</c>.</summary>

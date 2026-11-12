@@ -50,6 +50,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _lastListedRoot = string.Empty;
     private DoorsItem? _selectedItem;
     private DoorsErrorReport? _error;
+    private IReadOnlyList<DoorsItem> _selectedItems = [];
+    private Func<Task>? _retry;
 
     public MainViewModel(bool demo = false)
     {
@@ -84,6 +86,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         BrowseIntoCommand = new AsyncRelayCommand(BrowseIntoAsync,
             () => IsConnected && !IsBusy && SelectedItem is { IsModule: false });
         GoUpCommand = new AsyncRelayCommand(GoUpAsync, () => IsConnected && !IsBusy && RootPath.Trim() is not ("" or "/"));
+        ExportJsonCommand = new AsyncRelayCommand(ExportJsonAsync,
+            () => IsConnected && !IsBusy && SelectedFormalModules.Count > 0);
         RetryCommand = new AsyncRelayCommand(RetryAsync, () => Error is not null && !IsBusy);
         CopyErrorCommand = new RelayCommand(_ => CopyError(), _ => Error is not null);
         DismissErrorCommand = new RelayCommand(_ => Error = null, _ => Error is not null);
@@ -104,6 +108,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand CopyPathCommand { get; }
     public ICommand BrowseIntoCommand { get; }
     public ICommand GoUpCommand { get; }
+    public ICommand ExportJsonCommand { get; }
     public ICommand RetryCommand { get; }
     public ICommand CopyErrorCommand { get; }
     public ICommand DismissErrorCommand { get; }
@@ -183,6 +188,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => _selectedItem;
         set => SetProperty(ref _selectedItem, value);
     }
+
+    /// <summary>Rows selected in the grid (multi-select). Set by the view.</summary>
+    public IReadOnlyList<DoorsItem> SelectedItems
+    {
+        get => _selectedItems;
+        set
+        {
+            _selectedItems = value;
+            SelectedFormalModules = value.Where(i => i.Type == DoorsItemType.Formal).ToList();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedFormalModules));
+            OnPropertyChanged(nameof(ExportJsonText));
+        }
+    }
+
+    /// <summary>Only formal modules have objects to export.</summary>
+    public IReadOnlyList<DoorsItem> SelectedFormalModules { get; private set; } = [];
+
+    public string ExportJsonText => SelectedFormalModules.Count switch
+    {
+        0 => "Seçili modülleri JSON'a aktar…",
+        1 => "Seçili modülü JSON'a aktar…",
+        var n => $"Seçili {n} modülü JSON'a aktar…",
+    };
 
     // Cached in RefreshView(): command CanExecute checks read it very often.
     public int VisibleCount { get; private set; }
@@ -288,7 +317,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Disconnect();
             }
 
-            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller listelenemedi", ex, root);
+            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller listelenemedi", ex, root, ListAsync);
         }
         finally
         {
@@ -298,11 +327,93 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Retries whatever failed: the listing if we are still connected, otherwise the connection.</summary>
-    private Task RetryAsync() => IsConnected ? ListAsync() : ConnectAsync();
-
-    private void ReportError(string title, Exception ex, string? rootPath = null)
+    /// <summary>Reads the selected formal modules from DOORS and saves their objects as one JSON file.</summary>
+    private async Task ExportJsonAsync()
     {
+        var modules = SelectedFormalModules.ToList();
+        if (modules.Count == 0 || _client is null) return;
+        var skipped = SelectedItems.Count - modules.Count;
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "Modül içeriğini JSON olarak dışa aktar",
+            Filter = "JSON dosyası (*.json)|*.json",
+            FileName = $"{SafeFileName(modules.Count == 1 ? modules[0].Name : "doors_moduller")}_{DateTime.Now:yyyyMMdd_HHmm}.json",
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        IsBusy = true;
+        Error = null;
+        _operationCts = new CancellationTokenSource();
+        var progress = new Progress<ModuleExportProgress>(p =>
+            StatusText = $"Modül okunuyor ({p.Index}/{p.Total}): {p.ModuleFullName}…");
+        try
+        {
+            var results = await ModuleJsonExporter.ReadModulesAsync(_client, modules, progress, _operationCts.Token);
+            var failed = results.Where(r => !r.Succeeded).ToList();
+
+            if (failed.Count == results.Count)
+            {
+                // Nothing useful to save: explain the (first) reason instead of writing an empty file.
+                ReportError(results.Count == 1 ? "Modül dışa aktarılamadı" : "Modüller dışa aktarılamadı",
+                    failed[0].Error!, retry: ExportJsonAsync);
+                return;
+            }
+
+            await ModuleJsonExporter.WriteAsync(dialog.FileName, results, _session, DateTimeOffset.Now, _operationCts.Token);
+
+            Warnings.Clear();
+            foreach (var f in failed) Warnings.Add($"'{f.Module.FullName}' aktarılamadı: {f.Error!.Message}");
+            foreach (var r in results.Where(r => r.Succeeded))
+            {
+                foreach (var w in r.Content!.Warnings) Warnings.Add($"'{r.Module.FullName}': {w}");
+            }
+
+            RefreshView();
+
+            var objects = results.Sum(r => r.Content?.Objects.Count ?? 0);
+            var summary = $"{results.Count - failed.Count} modül ({objects} nesne) dışa aktarıldı: {dialog.FileName}";
+            if (failed.Count > 0) summary += $" · {failed.Count} modül aktarılamadı (ayrıntılar uyarılarda)";
+            if (skipped > 0) summary += $" · {skipped} öğe formal modül olmadığı için atlandı";
+            StatusText = summary;
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = "Dışa aktarma iptal edildi; dosya yazılmadı.";
+        }
+        catch (Exception ex)
+        {
+            var lost = ex is DoorsException { Kind: DoorsErrorKind.ConnectionLost };
+            if (lost)
+            {
+                Disconnect();
+            }
+
+            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller dışa aktarılamadı", ex, retry: ExportJsonAsync);
+        }
+        finally
+        {
+            _operationCts.Dispose();
+            _operationCts = null;
+            IsBusy = false;
+        }
+    }
+
+    private static string SafeFileName(string name) =>
+        string.Join("_", name.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)) is { Length: > 0 } s
+            ? s
+            : "doors";
+
+    /// <summary>Repeats the operation that failed; reconnects first if the connection is gone.</summary>
+    private Task RetryAsync()
+    {
+        if (!IsConnected) return ConnectAsync();
+        return (_retry ?? ListAsync)();
+    }
+
+    private void ReportError(string title, Exception ex, string? rootPath = null, Func<Task>? retry = null)
+    {
+        _retry = retry;
         var context = new List<KeyValuePair<string, string>>
         {
             new("Bağlantı türü", SelectedMode.Label),

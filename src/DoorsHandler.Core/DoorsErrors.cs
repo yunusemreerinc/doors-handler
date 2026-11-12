@@ -31,6 +31,9 @@ public enum DoorsErrorKind
 
     /// <summary>The requested folder/project does not exist or is not visible to the user.</summary>
     RootNotFound,
+
+    /// <summary>A module could not be opened (missing, no read access, or locked).</summary>
+    ModuleNotAccessible,
 }
 
 /// <summary>Maps COM HRESULTs returned by the DOORS automation server to <see cref="DoorsErrorKind"/>.</summary>
@@ -88,7 +91,7 @@ public sealed record DoorsErrorReport(
         var (reason, suggestion) = Explain(kind);
 
         // These reasons are best explained by the specific message (which folder, which unexpected error).
-        if (kind == DoorsErrorKind.RootNotFound) reason = exception.Message;
+        if (kind is DoorsErrorKind.RootNotFound or DoorsErrorKind.ModuleNotAccessible) reason = exception.Message;
         else if (kind == DoorsErrorKind.Unknown) reason = $"{reason} {exception.Message}";
 
         var when = occurredAt ?? DateTime.Now;
@@ -121,6 +124,9 @@ public sealed record DoorsErrorReport(
         DoorsErrorKind.RootNotFound => (
             "İstenen klasör ya da proje bulunamadı.",
             "Kök klasör yolunu kontrol edin (ör. /Proje/Gereksinimler) ya da veritabanının tamamı için / yazın. Klasör varsa görme izniniz olmayabilir."),
+        DoorsErrorKind.ModuleNotAccessible => (
+            "Modül açılamadı.",
+            "Modülün hâlâ var olduğunu ve okuma izniniz olduğunu kontrol edin. Modül başka biri tarafından özel (exclusive) kilitlenmiş olabilir; listeyi yenileyip tekrar deneyin."),
         _ => (
             "Beklenmeyen bir hata oluştu.",
             "\"Tekrar dene\"ye basın. Sorun sürerse \"Ayrıntıları kopyala\" ile bilgileri destek ekibine iletin."),

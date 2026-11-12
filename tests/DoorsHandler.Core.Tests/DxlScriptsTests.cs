@@ -33,9 +33,21 @@ public class DxlScriptsTests
     }
 
     [Fact]
+    public void ReadModule_EmbedsModulePathSafely_AndClosesOnlyModulesItOpened()
+    {
+        var script = DxlScripts.ReadModule("Proj/\"Q\" Reqs/");
+
+        Assert.Contains("string dhModPath = \"/Proj/\\\"Q\\\" Reqs\"", script);
+        Assert.Contains("read(dhModPath, false)", script);
+        Assert.Contains("if (!dhWasOpen)", script);
+        Assert.Contains("for o in entire dhMod do", script);
+        Assert.Contains("if (isDeleted(o)) continue", script);
+    }
+
+    [Fact]
     public void Scripts_HaveBalancedBracesAndParentheses()
     {
-        foreach (var script in new[] { DxlScripts.SessionInfo(), DxlScripts.ListItems("/", true) })
+        foreach (var script in new[] { DxlScripts.SessionInfo(), DxlScripts.ListItems("/", true), DxlScripts.ReadModule("/P/SRS") })
         {
             var code = StripStringAndCharLiterals(script);
             Assert.Equal(code.Count(c => c == '{'), code.Count(c => c == '}'));
@@ -46,7 +58,7 @@ public class DxlScriptsTests
     [Fact]
     public void Scripts_AreAscii_SoTheyWorkWithAnyDoorsCodePage()
     {
-        foreach (var script in new[] { DxlScripts.SessionInfo(), DxlScripts.ListItems("/", true) })
+        foreach (var script in new[] { DxlScripts.SessionInfo(), DxlScripts.ListItems("/", true), DxlScripts.ReadModule("/P/SRS") })
         {
             Assert.All(script, c => Assert.True(c < 128, $"Non-ASCII character '{c}' in DXL script"));
         }

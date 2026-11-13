@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using DoorsHandler.Core;
+using DoorsHandler.Desktop.Theming;
 using DoorsHandler.Desktop.ViewModels;
 
 namespace DoorsHandler.Desktop;
@@ -33,6 +34,12 @@ public partial class MainWindow : Window
 
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) =>
         _viewModel.SelectedItems = ItemsGrid.SelectedItems.OfType<DoorsItem>().ToList();
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        ThemeManager.ApplyTitleBar(this);
+    }
 
     protected override void OnClosing(CancelEventArgs e)
     {

@@ -9,6 +9,7 @@ using DoorsHandler.Core;
 using DoorsHandler.Core.Dxl;
 using DoorsHandler.Desktop.Doors;
 using DoorsHandler.Desktop.Mvvm;
+using DoorsHandler.Desktop.Theming;
 using Microsoft.Win32;
 
 namespace DoorsHandler.Desktop.ViewModels;
@@ -53,8 +54,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private IReadOnlyList<DoorsItem> _selectedItems = [];
     private Func<Task>? _retry;
 
-    public MainViewModel(bool demo = false)
+    private readonly AppSettings _settings;
+    private Option<AppTheme> _selectedTheme;
+
+    public MainViewModel(AppSettings settings, bool demo = false)
     {
+        _settings = settings;
+        Themes =
+        [
+            new(AppTheme.System, "Sistem"),
+            new(AppTheme.Light, "Açık"),
+            new(AppTheme.Dark, "Koyu"),
+        ];
+        _selectedTheme = Themes.First(t => t.Value == ThemeManager.Selected);
+
         ConnectionModes =
         [
             new(ConnectionMode.DoorsCom, "IBM DOORS (yerel istemci)"),
@@ -99,6 +112,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<Option<ConnectionMode>> ConnectionModes { get; }
     public IReadOnlyList<Option<ItemFilter>> Filters { get; }
+    public IReadOnlyList<Option<AppTheme>> Themes { get; }
+
+    /// <summary>Applies the chosen theme immediately and remembers it for the next start.</summary>
+    public Option<AppTheme> SelectedTheme
+    {
+        get => _selectedTheme;
+        set
+        {
+            if (!SetProperty(ref _selectedTheme, value)) return;
+            ThemeManager.Apply(value.Value);
+            _settings.Theme = value.Value;
+            _settings.Save();
+        }
+    }
 
     public ICommand ConnectCommand { get; }
     public ICommand DisconnectCommand { get; }

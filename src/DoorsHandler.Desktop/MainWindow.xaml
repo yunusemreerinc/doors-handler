@@ -5,7 +5,8 @@
         Title="DOORS Handler — Modül Listesi"
         Width="1100" Height="700" MinWidth="760" MinHeight="420"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI" FontSize="13">
+        FontFamily="Segoe UI" FontSize="13"
+        Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextBrush}">
     <Window.Resources>
         <conv:ItemTypeLabelConverter x:Key="TypeLabel" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -23,7 +24,7 @@
         </Grid.RowDefinitions>
 
         <!-- Connection -->
-        <Border Grid.Row="0" Background="{StaticResource BarBrush}" BorderBrush="{StaticResource BorderBrush}"
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"
                 BorderThickness="0,0,0,1" Padding="8">
             <DockPanel LastChildFill="True">
                 <TextBlock DockPanel.Dock="Left" Text="Bağlantı:" Style="{StaticResource BarLabel}" />
@@ -35,14 +36,19 @@
                         Command="{Binding ConnectCommand}" />
                 <Button DockPanel.Dock="Left" Content="Bağlantıyı kes" Command="{Binding DisconnectCommand}" />
 
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
+                    <TextBlock Text="Tema:" Style="{StaticResource BarLabel}" />
+                    <ComboBox Width="90" ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}"
+                              ToolTip="Sistem: Windows'un açık/koyu mod ayarını izler" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Ellipse Width="10" Height="10" Margin="4,0" VerticalAlignment="Center">
                         <Ellipse.Style>
                             <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="#B0B7C3" />
+                                <Setter Property="Fill" Value="{DynamicResource StatusOffBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                        <Setter Property="Fill" Value="#2E9D57" />
+                                        <Setter Property="Fill" Value="{DynamicResource StatusOnBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -54,7 +60,7 @@
         </Border>
 
         <!-- Error report: what failed, why, and what to do -->
-        <Border Grid.Row="1" Background="#FDF0F0" BorderBrush="#E8B4B4" BorderThickness="0,0,0,1" Padding="12,10"
+        <Border Grid.Row="1" Background="{DynamicResource ErrorBackgroundBrush}" BorderBrush="{DynamicResource ErrorBorderBrush}" BorderThickness="0,0,0,1" Padding="12,10"
                 Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"
                 AutomationProperties.LiveSetting="Assertive">
             <DockPanel LastChildFill="True">
@@ -66,14 +72,14 @@
                 </StackPanel>
                 <TextBlock DockPanel.Dock="Left" Text="⛔" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Top" />
                 <StackPanel>
-                    <TextBlock Text="{Binding Error.Title}" FontWeight="Bold" FontSize="14" Foreground="#9B1C1C" />
+                    <TextBlock Text="{Binding Error.Title}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ErrorTextBrush}" />
                     <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
                         <Run Text="Neden: " FontWeight="SemiBold" /><Run Text="{Binding Error.Reason, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
                         <Run Text="Ne yapabilirsiniz: " FontWeight="SemiBold" /><Run Text="{Binding Error.Suggestion, Mode=OneWay}" />
                     </TextBlock>
-                    <Expander Header="Teknik ayrıntılar" Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}">
+                    <Expander Header="Teknik ayrıntılar" Margin="0,6,0,0" Foreground="{DynamicResource MutedBrush}">
                         <TextBox Text="{Binding Error.Details, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
                                  FontFamily="Consolas" FontSize="12" Margin="0,4,0,0" Padding="4"
                                  MaxHeight="140" VerticalScrollBarVisibility="Auto" />
@@ -111,7 +117,7 @@
             <Grid Margin="0">
                 <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Text="Ad, yol, açıklama veya ID içinde ara…" IsHitTestVisible="False"
-                           Margin="12,0" VerticalAlignment="Center" Foreground="#9AA3AF">
+                           Margin="12,0" VerticalAlignment="Center" Foreground="{DynamicResource PlaceholderBrush}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -136,8 +142,7 @@
                       SelectionChanged="OnSelectionChanged"
                       CanUserAddRows="False" CanUserDeleteRows="False"
                       HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                      HorizontalGridLinesBrush="#E6E9EE" RowHeight="26"
-                      BorderBrush="{StaticResource BorderBrush}"
+                      RowHeight="26"
                       MouseDoubleClick="OnItemDoubleClick">
                 <DataGrid.ContextMenu>
                     <ContextMenu>
@@ -164,7 +169,7 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}"
                        TextAlignment="Center" IsHitTestVisible="False"
                        Text="Henüz modül listelenmedi.&#x0a;DOORS'a bağlanın; liste otomatik olarak yüklenecek.">
                 <TextBlock.Style>
@@ -191,7 +196,7 @@
         <Expander Grid.Row="5" Margin="8,0,8,8"
                   Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVisibility}}">
             <Expander.Header>
-                <TextBlock Foreground="#9A6700">
+                <TextBlock Foreground="{DynamicResource WarningTextBrush}">
                     <Run Text="⚠ DOORS uyarıları (" /><Run Text="{Binding Warnings.Count, Mode=OneWay}" /><Run Text=")" />
                 </TextBlock>
             </Expander.Header>
@@ -199,7 +204,7 @@
         </Expander>
 
         <!-- Status -->
-        <StatusBar Grid.Row="6" Background="{StaticResource BarBrush}" BorderBrush="{StaticResource BorderBrush}"
+        <StatusBar Grid.Row="6" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"
                    BorderThickness="0,1,0,0">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -207,7 +212,7 @@
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
             <StatusBarItem DockPanel.Dock="Right">
-                <TextBlock Text="{Binding CountText}" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding CountText}" Foreground="{DynamicResource MutedBrush}" />
             </StatusBarItem>
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />

@@ -62,7 +62,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings = settings;
         Themes =
         [
-            new(AppTheme.System, "System"),
             new(AppTheme.Light, "Light"),
             new(AppTheme.Dark, "Dark"),
         ];

@@ -13,7 +13,7 @@ A Windows desktop app (WPF, .NET 8) that connects to the IBM DOORS (Classic, 9.x
 - Folders you have no access to don't stop the scan; they are reported as warnings.
 - If connecting or listing fails, an error banner explains **what happened**, **why** and **what to do**, with *Retry*, *Copy details* (to send to your support team) and technical details (HRESULT, privileges, architecture).
 - If DOORS doesn't respond within two minutes (for example because its login window is hidden), the connection times out; you can also click *Cancel* while it waits.
-- **Light / dark theme**: the *Theme* list at the top right offers *System* (follows the Windows light/dark mode setting and updates immediately when it changes), *Light* and *Dark*; the window title bar follows the theme too. The choice is saved in `%LOCALAPPDATA%\DoorsHandler\settings.json`.
+- **Light / dark theme**: choose *Light* or *Dark* from the *Theme* list at the top right; the window title bar follows the theme too. The app starts in the dark theme until you choose otherwise. Your choice is saved in `%LOCALAPPDATA%\DoorsHandler\settings.json`.
 - **Demo mode**: try the app with sample data on a machine without DOORS.
 
 ## Requirements

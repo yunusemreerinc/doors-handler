@@ -13,7 +13,11 @@ public sealed class AppSettings
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public AppTheme Theme { get; set; } = AppTheme.System;
+    /// <summary>
+    /// The chosen theme. Dark until the user picks one (first run, or a settings file from an
+    /// older version that no longer loads).
+    /// </summary>
+    public AppTheme Theme { get; set; } = AppTheme.Dark;
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DoorsHandler", "settings.json");

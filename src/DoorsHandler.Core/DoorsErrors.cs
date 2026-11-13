@@ -75,10 +75,10 @@ public sealed record DoorsErrorReport(
 {
     /// <summary>Plain-text version for the clipboard, e.g. to send to IT support.</summary>
     public string ToClipboardText() =>
-        $"{Title}\r\nNeden: {Reason}\r\nNe yapabilirsiniz: {Suggestion}\r\n\r\nTeknik ayrıntılar:\r\n{Details}";
+        $"{Title}\r\nReason: {Reason}\r\nWhat you can do: {Suggestion}\r\n\r\nTechnical details:\r\n{Details}";
 
     /// <summary>Builds a report for an exception thrown while performing <paramref name="title"/>.</summary>
-    /// <param name="title">What failed, e.g. "DOORS bağlantısı kurulamadı".</param>
+    /// <param name="title">What failed, e.g. "Could not connect to DOORS".</param>
     /// <param name="exception">The failure.</param>
     /// <param name="context">Extra "name: value" lines for the technical details (mode, root path, ...).</param>
     public static DoorsErrorReport Create(
@@ -101,35 +101,35 @@ public sealed record DoorsErrorReport(
     public static (string Reason, string Suggestion) Explain(DoorsErrorKind kind) => kind switch
     {
         DoorsErrorKind.NotInstalled => (
-            "Bu bilgisayarda IBM DOORS istemcisi bulunamadı (DOORS.Application COM sunucusu kayıtlı değil).",
-            "DOORS istemcisinin kurulu olduğundan emin olun. Kuruluysa kurulumu onarın ya da BT ekibinizden COM kaydını yenilemesini isteyin. DOORS olmadan denemek için bağlantı türünden \"Demo verisi\"ni seçin."),
+            "The IBM DOORS client was not found on this computer (the DOORS.Application COM server is not registered).",
+            "Make sure the DOORS client is installed. If it is, repair the installation or ask your IT team to re-register its COM server. To try the app without DOORS, choose \"Demo data\" as the connection."),
         DoorsErrorKind.StartFailed => (
-            "Windows DOORS istemcisini başlatamadı ya da çalışan DOORS'a bağlanamadı.",
-            "DOORS'u kendiniz açıp oturum açın, sonra \"Tekrar dene\"ye basın. DOORS ile bu uygulama farklı yetkilerle çalışıyorsa (biri \"Yönetici olarak\") ikisini de aynı şekilde açın."),
+            "Windows could not start the DOORS client or attach to the running DOORS.",
+            "Start DOORS yourself and log in, then click \"Retry\". If DOORS and this app run with different privileges (one of them \"as administrator\"), start both the same way."),
         DoorsErrorKind.AccessDenied => (
-            "Windows, DOORS işlemine erişimi reddetti. Genellikle uygulamalardan biri yönetici olarak, diğeri normal kullanıcı olarak çalıştığında olur.",
-            "DOORS'u ve bu uygulamayı aynı yetkiyle çalıştırın (ikisi de normal ya da ikisi de \"Yönetici olarak\"), sonra tekrar deneyin."),
+            "Windows denied access to the DOORS process. This usually happens when one of the two programs runs as administrator and the other does not.",
+            "Run DOORS and this app with the same privileges (both normally, or both \"as administrator\"), then try again."),
         DoorsErrorKind.Busy => (
-            "DOORS meşgul: açık bir pencere (oturum açma, uyarı, ayar penceresi) ya da çalışan başka bir DXL betiği komutu kabul etmiyor.",
-            "DOORS penceresine geçip açık iletişim kutularını kapatın veya oturum açmayı tamamlayın, sonra \"Tekrar dene\"ye basın."),
+            "DOORS is busy: an open dialog (login, warning or settings window) or another running DXL script is blocking commands.",
+            "Switch to the DOORS window, close any open dialogs or finish logging in, then click \"Retry\"."),
         DoorsErrorKind.Timeout => (
-            "DOORS belirlenen süre içinde yanıt vermedi. DOORS oturum açma penceresi başka pencerelerin arkasında bekliyor olabilir.",
-            "Görev çubuğundan DOORS penceresini bulup oturum açın, sonra \"Tekrar dene\"ye basın."),
+            "DOORS did not respond in time. Its login window may be waiting behind other windows.",
+            "Find the DOORS window on the taskbar and log in, then click \"Retry\"."),
         DoorsErrorKind.ConnectionLost => (
-            "DOORS istemcisi bağlantı kurulduktan sonra kapatıldı ya da çöktü.",
-            "DOORS'u yeniden açıp oturum açın, sonra \"Tekrar dene\"ye basın."),
+            "The DOORS client was closed or crashed after the connection was made.",
+            "Restart DOORS and log in, then click \"Retry\"."),
         DoorsErrorKind.ScriptFailed => (
-            "DOORS komutu çalıştıramadı ya da beklenmeyen bir yanıt döndürdü. DOORS içinde bir DXL hata penceresi açılmış olabilir.",
-            "DOORS penceresinde bir hata mesajı varsa metnini not edip pencereyi kapatın. Sorun sürerse \"Ayrıntıları kopyala\" ile bilgileri destek ekibine iletin."),
+            "DOORS could not run the command or returned an unexpected response. A DXL error window may have opened in DOORS.",
+            "If DOORS shows an error message, note its text and close the window. If the problem persists, use \"Copy details\" to send the information to your support team."),
         DoorsErrorKind.RootNotFound => (
-            "İstenen klasör ya da proje bulunamadı.",
-            "Kök klasör yolunu kontrol edin (ör. /Proje/Gereksinimler) ya da veritabanının tamamı için / yazın. Klasör varsa görme izniniz olmayabilir."),
+            "The requested folder or project was not found.",
+            "Check the root folder path (e.g. /Project/Requirements), or enter / for the whole database. If the folder exists, you may not have permission to see it."),
         DoorsErrorKind.ModuleNotAccessible => (
-            "Modül açılamadı.",
-            "Modülün hâlâ var olduğunu ve okuma izniniz olduğunu kontrol edin. Modül başka biri tarafından özel (exclusive) kilitlenmiş olabilir; listeyi yenileyip tekrar deneyin."),
+            "The module could not be opened.",
+            "Check that the module still exists and that you have read access. Someone may have locked it exclusively; refresh the list and try again."),
         _ => (
-            "Beklenmeyen bir hata oluştu.",
-            "\"Tekrar dene\"ye basın. Sorun sürerse \"Ayrıntıları kopyala\" ile bilgileri destek ekibine iletin."),
+            "An unexpected error occurred.",
+            "Click \"Retry\". If the problem persists, use \"Copy details\" to send the information to your support team."),
     };
 
     private static string BuildDetails(
@@ -139,8 +139,8 @@ public sealed record DoorsErrorReport(
         DateTime when)
     {
         var sb = new StringBuilder();
-        sb.Append("Zaman: ").AppendLine(when.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
-        sb.Append("Hata türü: ").AppendLine(kind.ToString());
+        sb.Append("Time: ").AppendLine(when.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+        sb.Append("Error kind: ").AppendLine(kind.ToString());
         foreach (var (key, value) in context ?? [])
         {
             sb.Append(key).Append(": ").AppendLine(value);
@@ -149,7 +149,7 @@ public sealed record DoorsErrorReport(
         var depth = 0;
         for (var e = exception; e is not null; e = e.InnerException, depth++)
         {
-            sb.Append(depth == 0 ? "Hata: " : "İç hata: ")
+            sb.Append(depth == 0 ? "Error: " : "Inner error: ")
               .Append(e.GetType().Name)
               .Append(" (HRESULT 0x").Append(e.HResult.ToString("X8", CultureInfo.InvariantCulture)).Append("): ")
               .AppendLine(e.Message.Trim());

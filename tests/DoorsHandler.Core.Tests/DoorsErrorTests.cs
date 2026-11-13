@@ -42,18 +42,18 @@ public class DoorsErrorReportTests
     public void Create_ForComFailure_ExplainsReasonAndKeepsTechnicalDetails()
     {
         var com = new COMException("Class not registered", unchecked((int)0x80040154));
-        var ex = new DoorsException(DoorsErrorKind.NotInstalled, "'DOORS.Application' kayıtlı değil.", com);
+        var ex = new DoorsException(DoorsErrorKind.NotInstalled, "'DOORS.Application' is not registered.", com);
 
-        var report = DoorsErrorReport.Create("DOORS bağlantısı kurulamadı", ex,
-            [new("Bağlantı türü", "IBM DOORS (yerel istemci)")], When);
+        var report = DoorsErrorReport.Create("Could not connect to DOORS", ex,
+            [new("Connection type", "IBM DOORS (local client)")], When);
 
-        Assert.Equal("DOORS bağlantısı kurulamadı", report.Title);
+        Assert.Equal("Could not connect to DOORS", report.Title);
         Assert.Equal(DoorsErrorKind.NotInstalled, report.Kind);
-        Assert.Contains("DOORS istemcisi bulunamadı", report.Reason);
-        Assert.Contains("Demo", report.Suggestion);
+        Assert.Contains("DOORS client was not found", report.Reason);
+        Assert.Contains("Demo data", report.Suggestion);
         Assert.Contains("2026-11-12 14:30:05", report.Details);
-        Assert.Contains("Hata türü: NotInstalled", report.Details);
-        Assert.Contains("Bağlantı türü: IBM DOORS (yerel istemci)", report.Details);
+        Assert.Contains("Error kind: NotInstalled", report.Details);
+        Assert.Contains("Connection type: IBM DOORS (local client)", report.Details);
         Assert.Contains("HRESULT 0x80040154", report.Details);
         Assert.Contains("Class not registered", report.Details);
     }
@@ -61,17 +61,17 @@ public class DoorsErrorReportTests
     [Fact]
     public void Create_ForRootNotFound_UsesSpecificMessageAsReason()
     {
-        var ex = new DoorsException(DoorsErrorKind.RootNotFound, "DOORS'ta '/Yok' klasörü/projesi bulunamadı.");
+        var ex = new DoorsException(DoorsErrorKind.RootNotFound, "Folder or project '/Missing' was not found in DOORS.");
 
-        var report = DoorsErrorReport.Create("Modüller listelenemedi", ex, occurredAt: When);
+        var report = DoorsErrorReport.Create("Could not list modules", ex, occurredAt: When);
 
-        Assert.Contains("/Yok", report.Reason);
+        Assert.Contains("/Missing", report.Reason);
     }
 
     [Fact]
     public void Create_ForUnexpectedException_IncludesItsMessage()
     {
-        var report = DoorsErrorReport.Create("DOORS bağlantısı kurulamadı", new InvalidCastException("boom"), occurredAt: When);
+        var report = DoorsErrorReport.Create("Could not connect to DOORS", new InvalidCastException("boom"), occurredAt: When);
 
         Assert.Equal(DoorsErrorKind.Unknown, report.Kind);
         Assert.Contains("boom", report.Reason);
@@ -81,14 +81,14 @@ public class DoorsErrorReportTests
     [Fact]
     public void ToClipboardText_ContainsAllSections()
     {
-        var report = DoorsErrorReport.Create("Başlık",
-            new DoorsException(DoorsErrorKind.Busy, "meşgul"), occurredAt: When);
+        var report = DoorsErrorReport.Create("Title",
+            new DoorsException(DoorsErrorKind.Busy, "busy"), occurredAt: When);
 
         var text = report.ToClipboardText();
 
-        Assert.StartsWith("Başlık", text);
-        Assert.Contains("Neden: " + report.Reason, text);
-        Assert.Contains("Ne yapabilirsiniz: " + report.Suggestion, text);
+        Assert.StartsWith("Title", text);
+        Assert.Contains("Reason: " + report.Reason, text);
+        Assert.Contains("What you can do: " + report.Suggestion, text);
         Assert.Contains(report.Details, text);
     }
 }

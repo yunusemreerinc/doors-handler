@@ -2,13 +2,13 @@ using System.Text;
 
 namespace DoorsHandler.Core;
 
-/// <summary>Writes a module listing as CSV (UTF-8 with BOM so Excel shows Turkish characters correctly).</summary>
+/// <summary>Writes a module listing as CSV (UTF-8 with BOM so Excel shows non-ASCII characters correctly).</summary>
 public static class CsvExporter
 {
     public static string ToCsv(IEnumerable<DoorsItem> items, char separator = ';')
     {
         var sb = new StringBuilder();
-        AppendRow(sb, separator, "Tür", "Ad", "Tam Yol", "Üst Klasör", "Unique ID", "Açıklama");
+        AppendRow(sb, separator, "Type", "Name", "Full Path", "Parent Folder", "Unique ID", "Description");
         foreach (var item in items)
         {
             AppendRow(sb, separator,

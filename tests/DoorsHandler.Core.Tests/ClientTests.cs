@@ -63,10 +63,10 @@ public class DemoDoorsClientTests
         await client.ConnectAsync();
 
         var all = await client.ListItemsAsync("/", recursive: true);
-        var project = await client.ListItemsAsync("/Uydu Projesi/", recursive: true);
+        var project = await client.ListItemsAsync("/Satellite Project/", recursive: true);
 
         Assert.True(all.Items.Count(i => i.IsModule) > 5);
-        Assert.All(project.Items, i => Assert.StartsWith("/Uydu Projesi/", i.FullName));
+        Assert.All(project.Items, i => Assert.StartsWith("/Satellite Project/", i.FullName));
         Assert.Equal(2, project.Items.Count);
     }
 
@@ -87,7 +87,7 @@ public class DemoDoorsClientTests
         using var client = new DemoDoorsClient();
         await client.ConnectAsync();
 
-        await Assert.ThrowsAsync<DoorsException>(() => client.ListItemsAsync("/Yok", recursive: true));
+        await Assert.ThrowsAsync<DoorsException>(() => client.ListItemsAsync("/Missing", recursive: true));
     }
 }
 
@@ -103,7 +103,18 @@ public class CsvExporterTests
 
         var lines = CsvExporter.ToCsv(items).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
 
-        Assert.Equal("Tür;Ad;Tam Yol;Üst Klasör;Unique ID;Açıklama", lines[0]);
+        Assert.Equal("Type;Name;Full Path;Parent Folder;Unique ID;Description", lines[0]);
         Assert.Equal("Formal;\"SRS; v2\";\"/P/SRS; v2\";/P;1;\"say \"\"hi\"\"\"", lines[1]);
+    }
+
+    [Fact]
+    public void ToCsv_WithCommaSeparator_QuotesValuesContainingCommas()
+    {
+        var items = new[] { new DoorsItem(DoorsItemType.Formal, "SRS, v2", "/P/SRS, v2", "1", "a; b") };
+
+        var lines = CsvExporter.ToCsv(items, ',').Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal("Type,Name,Full Path,Parent Folder,Unique ID,Description", lines[0]);
+        Assert.Equal("Formal,\"SRS, v2\",\"/P/SRS, v2\",/P,1,a; b", lines[1]);
     }
 }

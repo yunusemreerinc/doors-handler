@@ -9,23 +9,23 @@ public sealed class DemoDoorsClient : IDoorsClient
 {
     private static readonly DoorsItem[] Database =
     [
-        Item(DoorsItemType.Project, "/Araç Projesi", "Örnek proje"),
-        Item(DoorsItemType.Folder, "/Araç Projesi/01 Gereksinimler", ""),
-        Item(DoorsItemType.Formal, "/Araç Projesi/01 Gereksinimler/Sistem Gereksinimleri", "SyRS"),
-        Item(DoorsItemType.Formal, "/Araç Projesi/01 Gereksinimler/Yazılım Gereksinimleri", "SRS"),
-        Item(DoorsItemType.Formal, "/Araç Projesi/01 Gereksinimler/Donanım Gereksinimleri", "HRS"),
-        Item(DoorsItemType.Folder, "/Araç Projesi/02 Tasarım", ""),
-        Item(DoorsItemType.Formal, "/Araç Projesi/02 Tasarım/Yazılım Mimarisi", "SAD"),
-        Item(DoorsItemType.Descriptive, "/Araç Projesi/02 Tasarım/Ham Notlar", "İçe aktarılmış belge"),
-        Item(DoorsItemType.Folder, "/Araç Projesi/03 Test", ""),
-        Item(DoorsItemType.Formal, "/Araç Projesi/03 Test/Sistem Test Senaryoları", "STP"),
-        Item(DoorsItemType.Link, "/Araç Projesi/03 Test/Doğrulama Bağlantıları", "Test → Gereksinim"),
-        Item(DoorsItemType.Link, "/Araç Projesi/Türetme Bağlantıları", "Satisfies"),
-        Item(DoorsItemType.Project, "/Uydu Projesi", ""),
-        Item(DoorsItemType.Formal, "/Uydu Projesi/Görev Gereksinimleri", "MRD"),
-        Item(DoorsItemType.Formal, "/Uydu Projesi/Arayüz Kontrol Dokümanı", "ICD"),
-        Item(DoorsItemType.Folder, "/Şablonlar", "Kurumsal şablonlar"),
-        Item(DoorsItemType.Formal, "/Şablonlar/Gereksinim Şablonu", ""),
+        Item(DoorsItemType.Project, "/Vehicle Project", "Sample project"),
+        Item(DoorsItemType.Folder, "/Vehicle Project/01 Requirements", ""),
+        Item(DoorsItemType.Formal, "/Vehicle Project/01 Requirements/System Requirements", "SyRS"),
+        Item(DoorsItemType.Formal, "/Vehicle Project/01 Requirements/Software Requirements", "SRS"),
+        Item(DoorsItemType.Formal, "/Vehicle Project/01 Requirements/Hardware Requirements", "HRS"),
+        Item(DoorsItemType.Folder, "/Vehicle Project/02 Design", ""),
+        Item(DoorsItemType.Formal, "/Vehicle Project/02 Design/Software Architecture", "SAD"),
+        Item(DoorsItemType.Descriptive, "/Vehicle Project/02 Design/Raw Notes", "Imported document"),
+        Item(DoorsItemType.Folder, "/Vehicle Project/03 Test", ""),
+        Item(DoorsItemType.Formal, "/Vehicle Project/03 Test/System Test Cases", "STP"),
+        Item(DoorsItemType.Link, "/Vehicle Project/03 Test/Verification Links", "Test → Requirement"),
+        Item(DoorsItemType.Link, "/Vehicle Project/Derivation Links", "Satisfies"),
+        Item(DoorsItemType.Project, "/Satellite Project", ""),
+        Item(DoorsItemType.Formal, "/Satellite Project/Mission Requirements", "MRD"),
+        Item(DoorsItemType.Formal, "/Satellite Project/Interface Control Document", "ICD"),
+        Item(DoorsItemType.Folder, "/Templates", "Company templates"),
+        Item(DoorsItemType.Formal, "/Templates/Requirement Template", ""),
     ];
 
     public bool IsConnected { get; private set; }
@@ -34,18 +34,18 @@ public sealed class DemoDoorsClient : IDoorsClient
     {
         await Task.Delay(300, cancellationToken).ConfigureAwait(false);
         IsConnected = true;
-        return new DoorsSessionInfo("demo", "Demo Veritabanı", "9.7 (demo)");
+        return new DoorsSessionInfo("demo", "Demo Database", "9.7 (demo)");
     }
 
     public async Task<DoorsListing> ListItemsAsync(string rootPath, bool recursive, CancellationToken cancellationToken = default)
     {
-        if (!IsConnected) throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+        if (!IsConnected) throw new InvalidOperationException("Connect to DOORS first.");
         await Task.Delay(300, cancellationToken).ConfigureAwait(false);
 
         var root = DxlScripts.NormalizePath(rootPath);
         if (root != "/" && !Database.Any(i => i.FullName == root && !i.IsModule))
         {
-            throw new DoorsException(DoorsErrorKind.RootNotFound, $"DOORS'ta '{root}' klasörü/projesi bulunamadı ya da erişim izniniz yok.");
+            throw new DoorsException(DoorsErrorKind.RootNotFound, $"Folder or project '{root}' was not found in DOORS, or you do not have access to it.");
         }
 
         var prefix = root == "/" ? "/" : root + "/";
@@ -58,19 +58,19 @@ public sealed class DemoDoorsClient : IDoorsClient
 
     public async Task<DoorsModuleContent> ReadModuleAsync(string moduleFullName, CancellationToken cancellationToken = default)
     {
-        if (!IsConnected) throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+        if (!IsConnected) throw new InvalidOperationException("Connect to DOORS first.");
         await Task.Delay(200, cancellationToken).ConfigureAwait(false);
 
         var path = DxlScripts.NormalizePath(moduleFullName);
         var module = Database.FirstOrDefault(i => i.FullName == path && i.Type == DoorsItemType.Formal)
             ?? throw new DoorsException(DoorsErrorKind.ModuleNotAccessible,
-                $"'{path}' modülü açılamadı (bulunamadı ya da okuma izniniz yok).");
+                $"Module '{path}' could not be opened (not found, or no read access).");
 
         DoorsAttributeDefinition[] definitions =
         [
-            new("Öncelik", "Priority"),
-            new("Durum", "Status"),
-            new("Doğrulama Yöntemi", "Verification"),
+            new("Priority", "Priority"),
+            new("Status", "Status"),
+            new("Verification Method", "Verification"),
         ];
         var prefix = string.IsNullOrEmpty(module.Description) ? "REQ" : module.Description;
         var objects = new List<DoorsObject>();
@@ -78,15 +78,15 @@ public sealed class DemoDoorsClient : IDoorsClient
         for (var section = 1; section <= 3; section++)
         {
             var headingNo = ++number;
-            objects.Add(DemoObject(prefix, headingNo, 1, null, $"{section} Bölüm {section}", string.Empty, definitions, "", "", ""));
+            objects.Add(DemoObject(prefix, headingNo, 1, null, $"{section} Chapter {section}", string.Empty, definitions, "", "", ""));
             for (var req = 1; req <= 4; req++)
             {
                 var n = ++number;
                 objects.Add(DemoObject(prefix, n, 2, headingNo, string.Empty,
-                    $"Sistem, {section}.{req} numaralı işlevi 100 ms içinde yerine getirmelidir.",
+                    $"The system shall perform function {section}.{req} within 100 ms.",
                     definitions,
-                    req % 3 == 0 ? "Düşük" : "Yüksek",
-                    req % 2 == 0 ? "Onaylandı" : "Taslak",
+                    req % 3 == 0 ? "Low" : "High",
+                    req % 2 == 0 ? "Approved" : "Draft",
                     "Test"));
             }
         }

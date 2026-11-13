@@ -24,7 +24,7 @@ public partial class App : Application
 
     private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show($"Beklenmeyen hata:\n\n{e.Exception.Message}", "DOORS Handler",
+        MessageBox.Show($"Unexpected error:\n\n{e.Exception.Message}", "DOORS Handler",
             MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }

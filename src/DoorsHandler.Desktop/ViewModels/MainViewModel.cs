@@ -47,7 +47,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _rootPath = "/";
     private bool _recursive = true;
     private string _filterText = string.Empty;
-    private string _statusText = "Bağlı değil. Başlamak için \"Bağlan\" düğmesine basın.";
+    private string _statusText = "Not connected. Click \"Connect\" to start.";
     private string _lastListedRoot = string.Empty;
     private DoorsItem? _selectedItem;
     private DoorsErrorReport? _error;
@@ -62,27 +62,27 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings = settings;
         Themes =
         [
-            new(AppTheme.System, "Sistem"),
-            new(AppTheme.Light, "Açık"),
-            new(AppTheme.Dark, "Koyu"),
+            new(AppTheme.System, "System"),
+            new(AppTheme.Light, "Light"),
+            new(AppTheme.Dark, "Dark"),
         ];
         _selectedTheme = Themes.First(t => t.Value == ThemeManager.Selected);
 
         ConnectionModes =
         [
-            new(ConnectionMode.DoorsCom, "IBM DOORS (yerel istemci)"),
-            new(ConnectionMode.Demo, "Demo verisi (DOORS gerekmez)"),
+            new(ConnectionMode.DoorsCom, "IBM DOORS (local client)"),
+            new(ConnectionMode.Demo, "Demo data (no DOORS needed)"),
         ];
         _selectedMode = ConnectionModes[demo ? 1 : 0];
 
         Filters =
         [
-            new(ItemFilter.AllModules, "Tüm modüller"),
-            new(ItemFilter.Formal, "Formal modüller"),
-            new(ItemFilter.Link, "Link modülleri"),
-            new(ItemFilter.Descriptive, "Descriptive modüller"),
-            new(ItemFilter.FoldersAndProjects, "Klasörler ve projeler"),
-            new(ItemFilter.Everything, "Tüm öğeler"),
+            new(ItemFilter.AllModules, "All modules"),
+            new(ItemFilter.Formal, "Formal modules"),
+            new(ItemFilter.Link, "Link modules"),
+            new(ItemFilter.Descriptive, "Descriptive modules"),
+            new(ItemFilter.FoldersAndProjects, "Folders and projects"),
+            new(ItemFilter.Everything, "All items"),
         ];
         _selectedFilter = Filters[0];
 
@@ -171,7 +171,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public bool CanChangeMode => !IsConnected && !IsBusy;
 
     public string SessionText => _session is null
-        ? "Bağlı değil"
+        ? "Not connected"
         : $"{_session.UserName} @ {_session.DatabaseName} · DOORS {_session.Version}";
 
     public bool IsBusy
@@ -235,9 +235,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string ExportJsonText => SelectedFormalModules.Count switch
     {
-        0 => "Seçili modülleri JSON'a aktar…",
-        1 => "Seçili modülü JSON'a aktar…",
-        var n => $"Seçili {n} modülü JSON'a aktar…",
+        0 => "Export selected modules to JSON…",
+        1 => "Export selected module to JSON…",
+        var n => $"Export {n} selected modules to JSON…",
     };
 
     // Cached in RefreshView(): command CanExecute checks read it very often.
@@ -247,7 +247,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string CountText => Items.Count == 0
         ? string.Empty
-        : $"{VisibleCount} / {Items.Count} öğe gösteriliyor · toplam {ModuleCount} modül";
+        : $"Showing {VisibleCount} of {Items.Count} items · {ModuleCount} modules in total";
 
     private async Task ConnectAsync()
     {
@@ -255,13 +255,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Error = null;
         _operationCts = new CancellationTokenSource();
         StatusText = SelectedMode.Value == ConnectionMode.Demo
-            ? "Demo verisine bağlanılıyor…"
-            : "DOORS'a bağlanılıyor… DOORS kapalıysa açılacak ve oturum açmanız istenecek.";
+            ? "Connecting to demo data…"
+            : "Connecting to DOORS… If DOORS is not running, it will start and ask you to log in.";
         try
         {
             _client = CreateClient(SelectedMode.Value);
             SetSession(await _client.ConnectAsync(_operationCts.Token));
-            StatusText = $"Bağlandı: {SessionText}";
+            StatusText = $"Connected: {SessionText}";
         }
         catch (Exception ex)
         {
@@ -272,11 +272,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SetSession(null);
             if (ex is OperationCanceledException)
             {
-                StatusText = "Bağlantı iptal edildi.";
+                StatusText = "Connection cancelled.";
             }
             else
             {
-                ReportError("DOORS bağlantısı kurulamadı", ex);
+                ReportError("Could not connect to DOORS", ex);
             }
 
             return;
@@ -306,7 +306,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Warnings.Clear();
         _lastListedRoot = string.Empty;
         RefreshView();
-        StatusText = "Bağlantı kesildi.";
+        StatusText = "Disconnected.";
     }
 
     private async Task ListAsync()
@@ -319,8 +319,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var root = DxlScripts.NormalizePath(RootPath);
         RootPath = root;
         StatusText = Recursive
-            ? $"'{root}' altındaki tüm modüller taranıyor… Büyük veritabanlarında bu biraz sürebilir."
-            : $"'{root}' listeleniyor…";
+            ? $"Scanning all modules under '{root}'… This can take a while for large databases."
+            : $"Listing '{root}'…";
         try
         {
             var listing = await _client.ListItemsAsync(root, Recursive, _operationCts.Token);
@@ -330,11 +330,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             foreach (var warning in listing.Warnings) Warnings.Add(warning);
             _lastListedRoot = root;
             RefreshView();
-            StatusText = $"'{root}' listelendi ({DateTime.Now:HH:mm:ss}).";
+            StatusText = $"Listed '{root}' ({DateTime.Now:HH:mm:ss}).";
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Listeleme iptal edildi.";
+            StatusText = "Listing cancelled.";
         }
         catch (Exception ex)
         {
@@ -344,7 +344,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Disconnect();
             }
 
-            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller listelenemedi", ex, root, ListAsync);
+            ReportError(lost ? "Connection to DOORS lost" : "Could not list modules", ex, root, ListAsync);
         }
         finally
         {
@@ -363,9 +363,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var dialog = new SaveFileDialog
         {
-            Title = "Modül içeriğini JSON olarak dışa aktar",
-            Filter = "JSON dosyası (*.json)|*.json",
-            FileName = $"{SafeFileName(modules.Count == 1 ? modules[0].Name : "doors_moduller")}_{DateTime.Now:yyyyMMdd_HHmm}.json",
+            Title = "Export module contents as JSON",
+            Filter = "JSON file (*.json)|*.json",
+            FileName = $"{SafeFileName(modules.Count == 1 ? modules[0].Name : "doors_modules")}_{DateTime.Now:yyyyMMdd_HHmm}.json",
         };
         if (dialog.ShowDialog() != true) return;
 
@@ -373,7 +373,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Error = null;
         _operationCts = new CancellationTokenSource();
         var progress = new Progress<ModuleExportProgress>(p =>
-            StatusText = $"Modül okunuyor ({p.Index}/{p.Total}): {p.ModuleFullName}…");
+            StatusText = $"Reading module {p.Index} of {p.Total}: {p.ModuleFullName}…");
         try
         {
             var results = await ModuleJsonExporter.ReadModulesAsync(_client, modules, progress, _operationCts.Token);
@@ -382,7 +382,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (failed.Count == results.Count)
             {
                 // Nothing useful to save: explain the (first) reason instead of writing an empty file.
-                ReportError(results.Count == 1 ? "Modül dışa aktarılamadı" : "Modüller dışa aktarılamadı",
+                ReportError(results.Count == 1 ? "Could not export the module" : "Could not export the modules",
                     failed[0].Error!, retry: ExportJsonAsync);
                 return;
             }
@@ -390,7 +390,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             await ModuleJsonExporter.WriteAsync(dialog.FileName, results, _session, DateTimeOffset.Now, _operationCts.Token);
 
             Warnings.Clear();
-            foreach (var f in failed) Warnings.Add($"'{f.Module.FullName}' aktarılamadı: {f.Error!.Message}");
+            foreach (var f in failed) Warnings.Add($"'{f.Module.FullName}' could not be exported: {f.Error!.Message}");
             foreach (var r in results.Where(r => r.Succeeded))
             {
                 foreach (var w in r.Content!.Warnings) Warnings.Add($"'{r.Module.FullName}': {w}");
@@ -399,14 +399,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RefreshView();
 
             var objects = results.Sum(r => r.Content?.Objects.Count ?? 0);
-            var summary = $"{results.Count - failed.Count} modül ({objects} nesne) dışa aktarıldı: {dialog.FileName}";
-            if (failed.Count > 0) summary += $" · {failed.Count} modül aktarılamadı (ayrıntılar uyarılarda)";
-            if (skipped > 0) summary += $" · {skipped} öğe formal modül olmadığı için atlandı";
+            var summary = $"Exported {results.Count - failed.Count} module(s) ({objects} objects) to {dialog.FileName}";
+            if (failed.Count > 0) summary += $" · {failed.Count} module(s) could not be exported (see warnings)";
+            if (skipped > 0) summary += $" · {skipped} item(s) skipped because they are not formal modules";
             StatusText = summary;
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Dışa aktarma iptal edildi; dosya yazılmadı.";
+            StatusText = "Export cancelled; no file was written.";
         }
         catch (Exception ex)
         {
@@ -416,7 +416,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Disconnect();
             }
 
-            ReportError(lost ? "DOORS bağlantısı koptu" : "Modüller dışa aktarılamadı", ex, retry: ExportJsonAsync);
+            ReportError(lost ? "Connection to DOORS lost" : "Could not export the modules", ex, retry: ExportJsonAsync);
         }
         finally
         {
@@ -443,9 +443,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _retry = retry;
         var context = new List<KeyValuePair<string, string>>
         {
-            new("Bağlantı türü", SelectedMode.Label),
+            new("Connection type", SelectedMode.Label),
         };
-        if (rootPath is not null) context.Add(new("Kök klasör", rootPath));
+        if (rootPath is not null) context.Add(new("Root folder", rootPath));
         context.AddRange(EnvironmentInfo.Describe());
 
         Error = DoorsErrorReport.Create(title, ex, context);
@@ -458,11 +458,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             Clipboard.SetText(Error.ToClipboardText());
-            StatusText = "Hata ayrıntıları panoya kopyalandı.";
+            StatusText = "Error details copied to the clipboard.";
         }
         catch (Exception ex)
         {
-            ShowError("Pano hatası", ex);
+            ShowError("Clipboard error", ex);
         }
     }
 
@@ -487,22 +487,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             .Split(Path.GetInvalidFileNameChars().Append('/').ToArray(), StringSplitOptions.RemoveEmptyEntries));
         var dialog = new SaveFileDialog
         {
-            Title = "Modül listesini dışa aktar",
-            Filter = "CSV dosyası (*.csv)|*.csv",
-            FileName = $"{safeName}_moduller_{DateTime.Now:yyyyMMdd_HHmm}.csv",
+            Title = "Export module list",
+            Filter = "CSV file (*.csv)|*.csv",
+            FileName = $"{safeName}_modules_{DateTime.Now:yyyyMMdd_HHmm}.csv",
         };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
-            CsvExporter.Write(dialog.FileName, ItemsView.Cast<DoorsItem>());
-            StatusText = $"{VisibleCount} öğe dışa aktarıldı: {dialog.FileName}";
+            CsvExporter.Write(dialog.FileName, ItemsView.Cast<DoorsItem>(), ListSeparator());
+            StatusText = $"Exported {VisibleCount} items to {dialog.FileName}";
         }
         catch (Exception ex)
         {
-            ShowError("Dışa aktarma hatası", ex);
+            ShowError("Export error", ex);
         }
     }
+
+    /// <summary>Excel splits CSV columns on the Windows list separator ("," for English, ";" for e.g. Turkish).</summary>
+    private static char ListSeparator() =>
+        CultureInfo.CurrentCulture.TextInfo.ListSeparator is { Length: 1 } separator ? separator[0] : ',';
 
     private void CopyPath()
     {
@@ -510,11 +514,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             Clipboard.SetText(SelectedItem.FullName);
-            StatusText = $"Panoya kopyalandı: {SelectedItem.FullName}";
+            StatusText = $"Copied to clipboard: {SelectedItem.FullName}";
         }
         catch (Exception ex)
         {
-            ShowError("Pano hatası", ex);
+            ShowError("Clipboard error", ex);
         }
     }
 
@@ -562,7 +566,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private static void ShowError(string title, Exception ex)
     {
-        var message = ex is InvalidOperationException ? ex.Message : $"Beklenmeyen hata: {ex.Message}";
+        var message = ex is InvalidOperationException ? ex.Message : $"Unexpected error: {ex.Message}";
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 

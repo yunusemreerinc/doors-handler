@@ -201,9 +201,9 @@ public class ModuleJsonExporterTests
         using var client = new DemoDoorsClient();
         await client.ConnectAsync();
 
-        var content = await client.ReadModuleAsync("/Araç Projesi/01 Gereksinimler/Yazılım Gereksinimleri");
+        var content = await client.ReadModuleAsync("/Vehicle Project/01 Requirements/Software Requirements");
         var ex = await Assert.ThrowsAsync<DoorsException>(() =>
-            client.ReadModuleAsync("/Araç Projesi/Türetme Bağlantıları"));
+            client.ReadModuleAsync("/Vehicle Project/Derivation Links"));
 
         Assert.Equal(15, content.Objects.Count);
         Assert.Equal("SRS-2", content.Objects[1].Identifier);

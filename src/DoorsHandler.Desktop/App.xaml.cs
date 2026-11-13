@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using DoorsHandler.Desktop.Theming;
 using DoorsHandler.Desktop.ViewModels;
 
 namespace DoorsHandler.Desktop;
@@ -11,8 +12,12 @@ public partial class App : Application
         base.OnStartup(e);
         DispatcherUnhandledException += OnUnhandledException;
 
+        // Apply the saved theme before the window is created so it never flashes in the wrong colours.
+        var settings = AppSettings.Load();
+        ThemeManager.Apply(settings.Theme);
+
         var demo = e.Args.Any(a => string.Equals(a, "--demo", StringComparison.OrdinalIgnoreCase));
-        var window = new MainWindow(new MainViewModel(demo));
+        var window = new MainWindow(new MainViewModel(settings, demo));
         MainWindow = window;
         window.Show();
     }

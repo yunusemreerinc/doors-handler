@@ -13,6 +13,7 @@ IBM DOORS (Classic, 9.x) istemcisine bağlanıp veritabanındaki **modülleri li
 - Erişim izni olmayan klasörler taramayı durdurmaz; uyarı olarak ayrıca gösterilir.
 - Bağlantı ya da listeleme başarısız olursa pencerenin üstünde bir hata bandı çıkar: **ne olduğu**, **nedeni** ve **ne yapılabileceği** Türkçe açıklanır; *Tekrar dene*, *Ayrıntıları kopyala* (destek ekibine göndermek için) ve teknik ayrıntılar (HRESULT, yetki, mimari) aynı yerdedir.
 - DOORS iki dakika içinde yanıt vermezse (ör. oturum açma penceresi arkada kaldıysa) bağlantı zaman aşımıyla sonlanır; bağlanırken *İptal* ile beklemeyi bırakabilirsiniz.
+- **Açık / koyu tema**: Sağ üstteki *Tema* listesinden *Sistem* (Windows'un açık/koyu mod ayarını izler ve değişince anında uyar), *Açık* veya *Koyu* seçilebilir; pencere başlık çubuğu da temaya uyar. Seçim `%LOCALAPPDATA%\DoorsHandler\settings.json` dosyasında saklanır.
 - **Demo modu**: DOORS kurulu olmayan bir makinede arayüzü örnek verilerle denemek için.
 
 ## Gereksinimler
@@ -134,6 +135,8 @@ src/
     Doors/StaWorker.cs        COM çağrıları için ayrı STA iş parçacığı
     ViewModels/MainViewModel.cs
     MainWindow.xaml
+    Themes/                   Light.xaml / Dark.xaml renk paletleri, Controls.xaml kontrol stilleri
+    Theming/ThemeManager.cs   Tema değiştirme, Windows ayarını izleme, koyu başlık çubuğu
 tests/
   DoorsHandler.Core.Tests/  xUnit testleri
 ```

@@ -166,6 +166,12 @@ When something fails, the app classifies the cause itself and shows it in the er
 
 The *Technical details* section shows the time, the error kind, the HRESULT, whether the app is 32- or 64-bit, and whether it runs as administrator.
 
+## Versioning
+
+The version uses the **X.YY** format (`0.01`, `0.02`, … `0.99`, `1.00`, …) and is shown in the window title, e.g. *DOORS Handler v0.01 — Module List*. To release a new version, change only `AppVersion` in `src/DoorsHandler.Desktop/DoorsHandler.Desktop.csproj`. The build fails with a clear message if the value isn't in X.YY format.
+
+Windows' file properties need a numeric version, so one is derived automatically: `0.01` → `0.1.0`, `0.10` → `0.10.0`, `1.00` → `1.0.0`. These keep the right order. The *Product version* in the file properties shows the X.YY text.
+
 ## App icon
 
 The icon is in `src/DoorsHandler.Desktop/Assets/`. `AppIcon.svg` is the main design and `AppIcon-small.svg` a simplified version for 16–24 px, where the detailed one gets blurry. `AppIcon.ico` holds both, rendered at 16, 20, 24, 32, 40, 48, 64, 96, 128 and 256 px. After editing an SVG, render the PNG sizes (e.g. with Inkscape or `rsvg-convert`) and combine them into a new `AppIcon.ico`.

@@ -7,8 +7,6 @@ namespace DoorsHandler.Desktop.Theming;
 
 public enum AppTheme
 {
-    /// <summary>Follow the Windows "app mode" setting (Settings → Personalization → Colors).</summary>
-    System,
     Light,
     Dark,
 }
@@ -20,29 +18,15 @@ public static class ThemeManager
     private static readonly Uri DarkPalette = new("/DoorsHandler;component/Themes/Dark.xaml", UriKind.Relative);
 
     private static ResourceDictionary? _palette;
-    private static bool _listeningToSystem;
 
-    public static AppTheme Selected { get; private set; } = AppTheme.System;
+    public static AppTheme Selected { get; private set; } = AppTheme.Light;
 
-    /// <summary>The theme actually shown (after resolving <see cref="AppTheme.System"/>).</summary>
-    public static bool IsDark { get; private set; }
+    public static bool IsDark => Selected == AppTheme.Dark;
 
     public static void Apply(AppTheme theme)
     {
         Selected = theme;
-        var dark = theme == AppTheme.Dark || (theme == AppTheme.System && SystemPrefersDark());
-        SetPalette(dark);
-
-        if (theme == AppTheme.System && !_listeningToSystem)
-        {
-            SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
-            _listeningToSystem = true;
-        }
-        else if (theme != AppTheme.System && _listeningToSystem)
-        {
-            SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
-            _listeningToSystem = false;
-        }
+        SetPalette(theme == AppTheme.Dark);
     }
 
     // DWM window attributes (dwmapi.h).
@@ -135,7 +119,6 @@ public static class ThemeManager
         }
 
         _palette = next;
-        IsDark = dark;
 
         foreach (Window window in app.Windows)
         {
@@ -158,20 +141,10 @@ public static class ThemeManager
         return -1;
     }
 
-    private static void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
-    {
-        if (e.Category != UserPreferenceCategory.General) return;
-
-        // SystemEvents may raise this on another thread.
-        Application.Current?.Dispatcher.InvokeAsync(() =>
-        {
-            if (Selected != AppTheme.System) return;
-            var dark = SystemPrefersDark();
-            if (dark != IsDark) SetPalette(dark);
-        });
-    }
-
-    /// <summary>Reads the Windows "default app mode" (light/dark). Assumes light if it cannot be read.</summary>
+    /// <summary>
+    /// Reads the Windows "default app mode" (light/dark). Only used to pick the theme on the
+    /// first run, before the user has chosen one. Assumes light if it cannot be read.
+    /// </summary>
     public static bool SystemPrefersDark()
     {
         try

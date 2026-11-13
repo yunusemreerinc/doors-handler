@@ -38,8 +38,7 @@
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
                     <TextBlock Text="Theme:" Style="{StaticResource BarLabel}" />
-                    <ComboBox Width="90" ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}"
-                              ToolTip="System: follows the Windows light/dark mode setting" />
+                    <ComboBox Width="90" ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Ellipse Width="10" Height="10" Margin="4,0" VerticalAlignment="Center">

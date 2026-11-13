@@ -13,7 +13,11 @@ public sealed class AppSettings
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public AppTheme Theme { get; set; } = AppTheme.System;
+    /// <summary>
+    /// The chosen theme. Until the user picks one (first run, or a settings file from an older
+    /// version that no longer loads), it matches the current Windows light/dark setting.
+    /// </summary>
+    public AppTheme Theme { get; set; } = ThemeManager.SystemPrefersDark() ? AppTheme.Dark : AppTheme.Light;
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DoorsHandler", "settings.json");

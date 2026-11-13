@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:DoorsHandler.Desktop.Converters"
         Title="DOORS Handler — Module List"
+        Icon="Assets/AppIcon.ico"
         Width="1100" Height="700" MinWidth="760" MinHeight="420"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI" FontSize="13"

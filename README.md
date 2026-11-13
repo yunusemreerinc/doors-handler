@@ -1,5 +1,7 @@
 # doors-handler
 
+<img src="src/DoorsHandler.Desktop/Assets/AppIcon-256.png" alt="DOORS Handler icon" width="96" />
+
 A Windows desktop app (WPF, .NET 8) that connects to the IBM DOORS (Classic, 9.x) client and **lists the modules** in its database.
 
 ## Features
@@ -163,6 +165,10 @@ When something fails, the app classifies the cause itself and shows it in the er
 | Module could not be opened | During JSON export: the module was deleted, you have no read access, or it is locked exclusively | Refresh the list and try again, or check your access in DOORS. |
 
 The *Technical details* section shows the time, the error kind, the HRESULT, whether the app is 32- or 64-bit, and whether it runs as administrator.
+
+## App icon
+
+The icon is in `src/DoorsHandler.Desktop/Assets/`. `AppIcon.svg` is the main design and `AppIcon-small.svg` a simplified version for 16–24 px, where the detailed one gets blurry. `AppIcon.ico` holds both, rendered at 16, 20, 24, 32, 40, 48, 64, 96, 128 and 256 px. After editing an SVG, render the PNG sizes (e.g. with Inkscape or `rsvg-convert`) and combine them into a new `AppIcon.ico`.
 
 ## Out of scope
 

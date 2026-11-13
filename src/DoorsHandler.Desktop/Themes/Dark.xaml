@@ -31,6 +31,11 @@
     <SolidColorBrush x:Key="StatusOffBrush" Color="#5C626B" />
     <SolidColorBrush x:Key="StatusOnBrush" Color="#3FB971" />
 
+    <!-- Window title bar (applied through DWM by ThemeManager; Windows 11 uses all three, Windows 10 only light/dark). -->
+    <SolidColorBrush x:Key="TitleBarBrush" Color="#1E1F22" />
+    <SolidColorBrush x:Key="TitleBarTextBrush" Color="#E6E7EA" />
+    <SolidColorBrush x:Key="TitleBarBorderBrush" Color="#3F4248" />
+
     <!-- Windows system colours used by built-in templates that are not restyled. -->
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#2B2D31" />
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="#E6E7EA" />

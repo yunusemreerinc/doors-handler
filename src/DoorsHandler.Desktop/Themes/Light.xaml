@@ -30,4 +30,9 @@
     <SolidColorBrush x:Key="WarningTextBrush" Color="#9A6700" />
     <SolidColorBrush x:Key="StatusOffBrush" Color="#B0B7C3" />
     <SolidColorBrush x:Key="StatusOnBrush" Color="#2E9D57" />
+
+    <!-- Window title bar (applied through DWM by ThemeManager; Windows 11 uses all three, Windows 10 only light/dark). -->
+    <SolidColorBrush x:Key="TitleBarBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TitleBarTextBrush" Color="#1F2328" />
+    <SolidColorBrush x:Key="TitleBarBorderBrush" Color="#D5DAE1" />
 </ResourceDictionary>

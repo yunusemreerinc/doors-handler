@@ -101,11 +101,12 @@ public class ModuleJsonExporterTests
         public void Dispose() { }
     }
 
+    // Sample text with non-ASCII characters (German umlauts, ß, µ, °) to check they survive the export.
     private static DoorsModuleContent Content(string path) => new(
         path[(path.LastIndexOf('/') + 1)..], path, "desc",
-        [new("Öncelik", "Priority")],
-        [new(1, "R-1", 1, null, "Giriş", "", "a", "1", "b", "2", new Dictionary<string, string> { ["Öncelik"] = "Yüksek" }),
-         new(2, "R-2", 2, 1, "", "Metin \"alıntı\"", "a", "1", "b", "2", new Dictionary<string, string> { ["Öncelik"] = "" })],
+        [new("Priorität", "Priority")],
+        [new(1, "R-1", 1, null, "Einführung", "", "a", "1", "b", "2", new Dictionary<string, string> { ["Priorität"] = "Höchste" }),
+         new(2, "R-2", 2, 1, "", "Größe \"5 µm\" bei 20 °C", "a", "1", "b", "2", new Dictionary<string, string> { ["Priorität"] = "" })],
         []);
 
     [Fact]
@@ -158,7 +159,7 @@ public class ModuleJsonExporterTests
         {
             new ModuleExportResult(Formal("/P/SRS"), Content("/P/SRS"), null),
             new ModuleExportResult(Formal("/P/Locked"), null,
-                new DoorsException(DoorsErrorKind.ModuleNotAccessible, "'/P/Locked' modülü açılamadı.")),
+                new DoorsException(DoorsErrorKind.ModuleNotAccessible, "Module '/P/Locked' could not be opened.")),
         };
 
         var json = ModuleJsonExporter.ToJson(results, new DoorsSessionInfo("jdoe", "ProdDB", "9.7"),
@@ -178,21 +179,22 @@ public class ModuleJsonExporterTests
         Assert.Equal("/P/SRS", srs.GetProperty("fullName").GetString());
         Assert.Equal(2, srs.GetProperty("objectCount").GetInt32());
         Assert.False(srs.TryGetProperty("error", out _));
-        Assert.Equal("Öncelik", srs.GetProperty("attributeDefinitions")[0].GetProperty("name").GetString());
+        Assert.Equal("Priorität", srs.GetProperty("attributeDefinitions")[0].GetProperty("name").GetString());
 
         var objects = srs.GetProperty("objects");
         Assert.False(objects[0].TryGetProperty("parentAbsoluteNumber", out _));
         Assert.Equal(1, objects[1].GetProperty("parentAbsoluteNumber").GetInt32());
-        Assert.Equal("Metin \"alıntı\"", objects[1].GetProperty("text").GetString());
+        Assert.Equal("Größe \"5 µm\" bei 20 °C", objects[1].GetProperty("text").GetString());
         // Attribute names are kept exactly as in DOORS (not camelCased).
-        Assert.Equal("Yüksek", objects[0].GetProperty("attributes").GetProperty("Öncelik").GetString());
+        Assert.Equal("Höchste", objects[0].GetProperty("attributes").GetProperty("Priorität").GetString());
 
         var locked = modules[1];
-        Assert.Contains("açılamadı", locked.GetProperty("error").GetString());
+        Assert.Contains("could not be opened", locked.GetProperty("error").GetString());
         Assert.False(locked.TryGetProperty("objects", out _));
 
         // Non-ASCII text is written as-is, not as \u escapes.
-        Assert.Contains("Yüksek", json);
+        Assert.Contains("Höchste", json);
+        Assert.Contains("5 µm", json);
     }
 
     [Fact]

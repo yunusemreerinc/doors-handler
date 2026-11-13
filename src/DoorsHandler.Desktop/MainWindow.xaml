@@ -15,13 +15,13 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />  <!-- connection -->
+            <RowDefinition Height="Auto" />  <!-- root folder -->
+            <RowDefinition Height="Auto" />  <!-- filter -->
+            <RowDefinition Height="*" />     <!-- module list -->
+            <RowDefinition Height="Auto" />  <!-- warnings -->
+            <RowDefinition Height="Auto" />  <!-- error banner -->
+            <RowDefinition Height="Auto" />  <!-- status bar -->
         </Grid.RowDefinitions>
 
         <!-- Connection -->
@@ -59,37 +59,8 @@
             </DockPanel>
         </Border>
 
-        <!-- Error report: what failed, why, and what to do -->
-        <Border Grid.Row="1" Background="{DynamicResource ErrorBackgroundBrush}" BorderBrush="{DynamicResource ErrorBorderBrush}" BorderThickness="0,0,0,1" Padding="12,10"
-                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"
-                AutomationProperties.LiveSetting="Assertive">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                    <Button Content="Retry" Style="{StaticResource PrimaryButton}" Command="{Binding RetryCommand}" />
-                    <Button Content="Copy details" Command="{Binding CopyErrorCommand}"
-                            ToolTip="Copies the error details to the clipboard so you can send them to your support team" />
-                    <Button Content="✕" Padding="8,2" ToolTip="Close" Command="{Binding DismissErrorCommand}" />
-                </StackPanel>
-                <TextBlock DockPanel.Dock="Left" Text="⛔" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Top" />
-                <StackPanel>
-                    <TextBlock Text="{Binding Error.Title}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ErrorTextBrush}" />
-                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
-                        <Run Text="Reason: " FontWeight="SemiBold" /><Run Text="{Binding Error.Reason, Mode=OneWay}" />
-                    </TextBlock>
-                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
-                        <Run Text="What you can do: " FontWeight="SemiBold" /><Run Text="{Binding Error.Suggestion, Mode=OneWay}" />
-                    </TextBlock>
-                    <Expander Header="Technical details" Margin="0,6,0,0" Foreground="{DynamicResource MutedBrush}">
-                        <TextBox Text="{Binding Error.Details, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
-                                 FontFamily="Consolas" FontSize="12" Margin="0,4,0,0" Padding="4"
-                                 MaxHeight="140" VerticalScrollBarVisibility="Auto" />
-                    </Expander>
-                </StackPanel>
-            </DockPanel>
-        </Border>
-
         <!-- Where to list -->
-        <DockPanel Grid.Row="2" Margin="8,8,8,4" LastChildFill="True">
+        <DockPanel Grid.Row="1" Margin="8,8,8,4" LastChildFill="True">
             <TextBlock DockPanel.Dock="Left" Text="Root folder:" Style="{StaticResource BarLabel}" />
             <Button DockPanel.Dock="Left" Content="↑" ToolTip="Go up one folder" Padding="8,2"
                     Command="{Binding GoUpCommand}" />
@@ -107,7 +78,7 @@
         </DockPanel>
 
         <!-- Filter -->
-        <DockPanel Grid.Row="3" Margin="8,4,8,8" LastChildFill="True">
+        <DockPanel Grid.Row="2" Margin="8,4,8,8" LastChildFill="True">
             <TextBlock DockPanel.Dock="Left" Text="Show:" Style="{StaticResource BarLabel}" />
             <ComboBox DockPanel.Dock="Left" Width="190"
                       ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
@@ -133,7 +104,7 @@
         </DockPanel>
 
         <!-- Items -->
-        <Grid Grid.Row="4" Margin="8,0,8,8">
+        <Grid Grid.Row="3" Margin="8,0,8,8">
             <DataGrid x:Name="ItemsGrid"
                       ItemsSource="{Binding ItemsView}"
                       SelectedItem="{Binding SelectedItem}"
@@ -193,7 +164,7 @@
         </Grid>
 
         <!-- Warnings -->
-        <Expander Grid.Row="5" Margin="8,0,8,8"
+        <Expander Grid.Row="4" Margin="8,0,8,8"
                   Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVisibility}}">
             <Expander.Header>
                 <TextBlock Foreground="{DynamicResource WarningTextBrush}">
@@ -202,6 +173,36 @@
             </Expander.Header>
             <ListBox ItemsSource="{Binding Warnings}" MaxHeight="120" BorderThickness="0" />
         </Expander>
+
+        <!-- Error report: what failed, why, and what to do. Placed at the bottom so the
+             controls above don't move when it appears; only the module list gets shorter. -->
+        <Border Grid.Row="5" Background="{DynamicResource ErrorBackgroundBrush}" BorderBrush="{DynamicResource ErrorBorderBrush}" BorderThickness="0,1,0,0" Padding="12,10"
+                Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"
+                AutomationProperties.LiveSetting="Assertive">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Content="Retry" Style="{StaticResource PrimaryButton}" Command="{Binding RetryCommand}" />
+                    <Button Content="Copy details" Command="{Binding CopyErrorCommand}"
+                            ToolTip="Copies the error details to the clipboard so you can send them to your support team" />
+                    <Button Content="✕" Padding="8,2" ToolTip="Close" Command="{Binding DismissErrorCommand}" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Left" Text="⛔" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Top" />
+                <StackPanel>
+                    <TextBlock Text="{Binding Error.Title}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ErrorTextBrush}" />
+                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                        <Run Text="Reason: " FontWeight="SemiBold" /><Run Text="{Binding Error.Reason, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Margin="0,4,0,0">
+                        <Run Text="What you can do: " FontWeight="SemiBold" /><Run Text="{Binding Error.Suggestion, Mode=OneWay}" />
+                    </TextBlock>
+                    <Expander Header="Technical details" Margin="0,6,0,0" Foreground="{DynamicResource MutedBrush}">
+                        <TextBox Text="{Binding Error.Details, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                                 FontFamily="Consolas" FontSize="12" Margin="0,4,0,0" Padding="4"
+                                 MaxHeight="140" VerticalScrollBarVisibility="Auto" />
+                    </Expander>
+                </StackPanel>
+            </DockPanel>
+        </Border>
 
         <!-- Status -->
         <StatusBar Grid.Row="6" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"

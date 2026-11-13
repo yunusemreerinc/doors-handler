@@ -168,7 +168,7 @@ The *Technical details* section shows the time, the error kind, the HRESULT, whe
 
 ## Versioning
 
-The version uses the **X.YY** format (`0.01`, `0.02`, … `0.99`, `1.00`, …) and is shown in the window title, e.g. *DOORS Handler v0.01 — Module List*. To release a new version, change only `AppVersion` in `src/DoorsHandler.Desktop/DoorsHandler.Desktop.csproj`. The build fails with a clear message if the value isn't in X.YY format.
+The version uses the **X.YY** format (`0.01`, `0.02`, … `0.99`, `1.00`, …) and is shown in the window title, e.g. *DOORS Handler v0.01*. To release a new version, change only `AppVersion` in `src/DoorsHandler.Desktop/DoorsHandler.Desktop.csproj`. The build fails with a clear message if the value isn't in X.YY format.
 
 Windows' file properties need a numeric version, so one is derived automatically: `0.01` → `0.1.0`, `0.10` → `0.10.0`, `1.00` → `1.0.0`. These keep the right order. The *Product version* in the file properties shows the X.YY text.
 

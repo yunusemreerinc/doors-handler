@@ -166,8 +166,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Window title with the app version, e.g. "DOORS Handler v0.01 — Module List".</summary>
-    public string WindowTitle { get; } = $"{AppInfo.Name} v{AppInfo.Version} — Module List";
+    /// <summary>Window title with the app version, e.g. "DOORS Handler v0.01".</summary>
+    public string WindowTitle { get; } = $"{AppInfo.Name} v{AppInfo.Version}";
 
     public bool IsConnected => _session is not null;
     public bool CanChangeMode => !IsConnected && !IsBusy;

@@ -10,7 +10,14 @@
     <RootNamespace>DoorsHandler.Desktop</RootNamespace>
     <Product>DOORS Handler</Product>
     <Version>0.1.0</Version>
+    <!-- Icon of the .exe (Explorer, taskbar, Start menu). Sources: Assets/AppIcon.svg and AppIcon-small.svg. -->
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Same icon embedded for the window title bar. -->
+    <Resource Include="Assets\AppIcon.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DoorsHandler.Core\DoorsHandler.Core.csproj" />

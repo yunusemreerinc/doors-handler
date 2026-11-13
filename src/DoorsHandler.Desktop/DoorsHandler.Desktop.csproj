@@ -9,10 +9,33 @@
     <AssemblyName>DoorsHandler</AssemblyName>
     <RootNamespace>DoorsHandler.Desktop</RootNamespace>
     <Product>DOORS Handler</Product>
-    <Version>0.1.0</Version>
+    <!--
+      App version in X.YY format (0.01, 0.02, ... 0.99, 1.00, ...). This is the only place to change it.
+      It is shown in the window title and as "Product version" in the .exe's file properties.
+    -->
+    <AppVersion>0.01</AppVersion>
     <!-- Icon of the .exe (Explorer, taskbar, Start menu). Sources: Assets/AppIcon.svg and AppIcon-small.svg. -->
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <!--
+    .NET version numbers are numeric, so 0.01 would turn into 0.1. The X.YY text is kept as the
+    informational (display) version, and a numeric version is derived for Windows' file properties:
+    0.01 -> 0.1.0, 0.10 -> 0.10.0, 1.00 -> 1.0.0 (still ordered correctly).
+  -->
+  <PropertyGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('$(AppVersion)', '^\d+\.\d\d$'))">
+    <AppVersionMajor>$(AppVersion.Substring(0, $(AppVersion.IndexOf('.'))))</AppVersionMajor>
+    <AppVersionMinor>$([System.Int32]::Parse($(AppVersion.Substring($([MSBuild]::Add($(AppVersion.IndexOf('.')), 1))))))</AppVersionMinor>
+    <Version>$(AppVersionMajor).$(AppVersionMinor).0</Version>
+    <InformationalVersion>$(AppVersion)</InformationalVersion>
+    <!-- Keep the display version exactly X.YY (the SDK would otherwise append "+<git commit>"). -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <Target Name="ValidateAppVersion" BeforeTargets="BeforeBuild">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(AppVersion)', '^\d+\.\d\d$'))"
+           Text="AppVersion must use the X.YY format (for example 0.01 or 1.20), but it is '$(AppVersion)'." />
+  </Target>
 
   <ItemGroup>
     <!-- Same icon embedded for the window title bar. -->

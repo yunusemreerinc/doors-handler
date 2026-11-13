@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 
@@ -9,8 +8,7 @@ internal static class EnvironmentInfo
 {
     public static IEnumerable<KeyValuePair<string, string>> Describe()
     {
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
-        yield return new("App version", version);
+        yield return new("App version", AppInfo.Version);
         yield return new("App architecture", Environment.Is64BitProcess ? "64-bit" : "32-bit");
         // DOORS and this app must run with the same privileges, otherwise COM refuses access.
         yield return new("Running as administrator", IsElevated() switch

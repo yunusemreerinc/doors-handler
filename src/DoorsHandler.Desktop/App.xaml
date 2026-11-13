@@ -5,8 +5,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- First entry is the colour palette; ThemeManager swaps it for Dark.xaml at runtime. -->
-                <ResourceDictionary Source="Themes/Light.xaml" />
+                <!-- First entry is the colour palette (dark by default); ThemeManager swaps it at runtime. -->
+                <ResourceDictionary Source="Themes/Dark.xaml" />
                 <ResourceDictionary Source="Themes/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

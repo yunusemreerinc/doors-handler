@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
-using Microsoft.Win32;
 
 namespace DoorsHandler.Desktop.Theming;
 
@@ -19,7 +18,7 @@ public static class ThemeManager
 
     private static ResourceDictionary? _palette;
 
-    public static AppTheme Selected { get; private set; } = AppTheme.Light;
+    public static AppTheme Selected { get; private set; } = AppTheme.Dark;
 
     public static bool IsDark => Selected == AppTheme.Dark;
 
@@ -141,22 +140,6 @@ public static class ThemeManager
         return -1;
     }
 
-    /// <summary>
-    /// Reads the Windows "default app mode" (light/dark). Only used to pick the theme on the
-    /// first run, before the user has chosen one. Assumes light if it cannot be read.
-    /// </summary>
-    public static bool SystemPrefersDark()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            return key?.GetValue("AppsUseLightTheme") is int value && value == 0;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
 
     private const uint SwpNoSize = 0x0001;
     private const uint SwpNoMove = 0x0002;

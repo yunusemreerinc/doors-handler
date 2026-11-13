@@ -14,10 +14,10 @@ public sealed class AppSettings
     };
 
     /// <summary>
-    /// The chosen theme. Until the user picks one (first run, or a settings file from an older
-    /// version that no longer loads), it matches the current Windows light/dark setting.
+    /// The chosen theme. Dark until the user picks one (first run, or a settings file from an
+    /// older version that no longer loads).
     /// </summary>
-    public AppTheme Theme { get; set; } = ThemeManager.SystemPrefersDark() ? AppTheme.Dark : AppTheme.Light;
+    public AppTheme Theme { get; set; } = AppTheme.Dark;
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DoorsHandler", "settings.json");

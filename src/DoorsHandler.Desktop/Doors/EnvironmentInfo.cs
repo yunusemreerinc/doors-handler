@@ -10,16 +10,16 @@ internal static class EnvironmentInfo
     public static IEnumerable<KeyValuePair<string, string>> Describe()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
-        yield return new("Uygulama sürümü", version);
-        yield return new("Uygulama mimarisi", Environment.Is64BitProcess ? "64-bit" : "32-bit");
+        yield return new("App version", version);
+        yield return new("App architecture", Environment.Is64BitProcess ? "64-bit" : "32-bit");
         // DOORS and this app must run with the same privileges, otherwise COM refuses access.
-        yield return new("Yönetici olarak çalışıyor", IsElevated() switch
+        yield return new("Running as administrator", IsElevated() switch
         {
-            true => "Evet",
-            false => "Hayır",
-            null => "Bilinmiyor",
+            true => "Yes",
+            false => "No",
+            null => "Unknown",
         });
-        yield return new("İşletim sistemi", RuntimeInformation.OSDescription);
+        yield return new("Operating system", RuntimeInformation.OSDescription);
     }
 
     private static bool? IsElevated()

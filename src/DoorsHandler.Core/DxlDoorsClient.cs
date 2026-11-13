@@ -37,7 +37,7 @@ public sealed class DxlDoorsClient : IDoorsClient
         {
             throw new DoorsException(
                 DoorsErrorKind.Timeout,
-                $"DOORS {ConnectTimeout.TotalSeconds:0} saniye içinde yanıt vermedi.",
+                $"DOORS did not respond within {ConnectTimeout.TotalSeconds:0} seconds.",
                 ex);
         }
 
@@ -51,7 +51,7 @@ public sealed class DxlDoorsClient : IDoorsClient
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (!IsConnected)
         {
-            throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+            throw new InvalidOperationException("Connect to DOORS first.");
         }
 
         string raw;
@@ -76,7 +76,7 @@ public sealed class DxlDoorsClient : IDoorsClient
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (!IsConnected)
         {
-            throw new InvalidOperationException("Önce DOORS'a bağlanın.");
+            throw new InvalidOperationException("Connect to DOORS first.");
         }
 
         string raw;

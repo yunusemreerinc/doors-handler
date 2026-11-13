@@ -16,7 +16,7 @@ public static class DxlResultParser
             }
         }
 
-        throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS oturum bilgisi döndürmedi.");
+        throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS did not return session information.");
     }
 
     public static DoorsListing ParseListing(string? raw)
@@ -77,7 +77,7 @@ public static class DxlResultParser
 
         if (!hasHeader)
         {
-            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS modül bilgisini döndürmedi.");
+            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS did not return module information.");
         }
 
         return new DoorsModuleContent(name, fullName, description, definitions, objects, warnings);
@@ -119,7 +119,7 @@ public static class DxlResultParser
     {
         if (string.IsNullOrEmpty(raw))
         {
-            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS boş yanıt döndürdü. DXL betiği çalıştırılamamış olabilir.");
+            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS returned an empty response. The DXL script may not have run.");
         }
 
         var result = new List<string[]>();
@@ -153,7 +153,7 @@ public static class DxlResultParser
 
         if (!ok)
         {
-            throw new DoorsException(DoorsErrorKind.ScriptFailed, "DOORS yanıtı eksik; DXL betiği tamamlanmadan durdu.");
+            throw new DoorsException(DoorsErrorKind.ScriptFailed, "The DOORS response is incomplete; the DXL script stopped before finishing.");
         }
 
         return result;
@@ -163,17 +163,17 @@ public static class DxlResultParser
 
     private static string DescribeError(string code, string detail, string doorsMessage) => code switch
     {
-        "ROOT_NOT_FOUND" => $"DOORS'ta '{detail}' klasörü/projesi bulunamadı ya da erişim izniniz yok.",
+        "ROOT_NOT_FOUND" => $"Folder or project '{detail}' was not found in DOORS, or you do not have access to it.",
         "MODULE_NOT_ACCESSIBLE" => string.IsNullOrWhiteSpace(doorsMessage)
-            ? $"'{detail}' modülü açılamadı (bulunamadı ya da okuma izniniz yok)."
-            : $"'{detail}' modülü açılamadı: {doorsMessage.Trim()}",
-        _ => string.IsNullOrEmpty(detail) ? $"DOORS hatası: {code}" : $"DOORS hatası ({code}): {detail}",
+            ? $"Module '{detail}' could not be opened (not found, or no read access)."
+            : $"Module '{detail}' could not be opened: {doorsMessage.Trim()}",
+        _ => string.IsNullOrEmpty(detail) ? $"DOORS error: {code}" : $"DOORS error ({code}): {detail}",
     };
 
     private static string DescribeWarning(string code, string detail) => code switch
     {
-        "FOLDER_INACCESSIBLE" => $"'{detail}' içeriği okunamadı (erişim izni olmayabilir).",
-        "DXL" => $"DOORS uyarısı: {detail.Trim()}",
+        "FOLDER_INACCESSIBLE" => $"Could not read the contents of '{detail}' (you may not have access).",
+        "DXL" => $"DOORS warning: {detail.Trim()}",
         _ => string.IsNullOrEmpty(detail) ? code : $"{code}: {detail}",
     };
 

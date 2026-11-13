@@ -47,7 +47,7 @@ internal sealed class ComDxlExecutor : IDxlExecutor
                 Release();
             }
 
-            throw new DoorsException(kind, $"DOORS komutu çalıştırılamadı: {ex.Message}", ex);
+            throw new DoorsException(kind, $"The DOORS command could not be run: {ex.Message}", ex);
         }
     }
 
@@ -56,12 +56,12 @@ internal sealed class ComDxlExecutor : IDxlExecutor
         var type = Type.GetTypeFromProgID(ProgId, throwOnError: false)
             ?? throw new DoorsException(
                 DoorsErrorKind.NotInstalled,
-                $"'{ProgId}' COM sunucusu bu bilgisayarda kayıtlı değil.");
+                $"The '{ProgId}' COM server is not registered on this computer.");
 
         try
         {
             return Activator.CreateInstance(type)
-                ?? throw new DoorsException(DoorsErrorKind.StartFailed, "DOORS COM nesnesi oluşturulamadı.");
+                ?? throw new DoorsException(DoorsErrorKind.StartFailed, "The DOORS COM object could not be created.");
         }
         catch (Exception ex) when (ex is not DoorsException)
         {
@@ -69,7 +69,7 @@ internal sealed class ComDxlExecutor : IDxlExecutor
             // (e.g. E_ACCESSDENIED -> UnauthorizedAccessException), so classify by HResult.
             throw new DoorsException(
                 DoorsErrorClassifier.FromHResult(ex.HResult, duringStartup: true),
-                $"DOORS istemcisi başlatılamadı ya da bağlanılamadı: {ex.Message}",
+                $"Could not start or connect to the DOORS client: {ex.Message}",
                 ex);
         }
     }

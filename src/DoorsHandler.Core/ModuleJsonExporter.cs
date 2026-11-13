@@ -92,7 +92,7 @@ public static class ModuleJsonExporter
         if (result.Content is not { } content)
         {
             return new ExportModule(item.Name, item.FullName, item.UniqueId, NullIfEmpty(item.Description),
-                Error: result.Error?.Message ?? "Bilinmeyen hata", null, null, null, null);
+                Error: result.Error?.Message ?? "Unknown error", null, null, null, null);
         }
 
         return new ExportModule(
